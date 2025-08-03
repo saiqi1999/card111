@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3 uid="uid://c5pefett4h1pi"]
+
+[ext_resource type="Texture2D" uid="uid://i7i134lmtupg" path="res://assets/images/d97559ea-798f-41f9-9097-441b85e7626e.png" id="1_0wfyh"]
+[ext_resource type="Script" uid="uid://c5jqd4lacoude" path="res://scripts/combat_manager.gd" id="2_sugp2"]
+
+[node name="Main" type="Node2D"]
+
+[node name="background" type="Sprite2D" parent="."]
+position = Vector2(1801, 1800)
+scale = Vector2(3.47852, 3.47852)
+texture = ExtResource("1_0wfyh")
+
+[node name="player area" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 370.0
+offset_top = 894.0
+offset_right = 1501.0
+offset_bottom = 2127.0
+
+[node name="card area" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 411.0
+offset_top = 2030.0
+offset_right = 3319.0
+offset_bottom = 2696.0
+
+[node name="card container" type="Node2D" parent="card area"]
+
+[node name="mobs area" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1656.0
+offset_top = 753.0
+offset_right = 3236.0
+offset_bottom = 1986.0
+
+[node name="mobs container" type="Node2D" parent="mobs area"]
+
+[node name="combat manager" type="Node" parent="."]
+script = ExtResource("2_sugp2")
