@@ -1,0 +1,67 @@
+[gd_scene load_steps=0 format=3 uid="uid://ctp5qv54vqg7h"]
+
+[node name="UI" type="CanvasLayer"]
+
+[node name="PlayerInfo" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+grow_horizontal = 0
+size_flags_horizontal = 8
+
+[node name="Panel" type="Panel" parent="PlayerInfo"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -200.0
+offset_right = 0.0
+offset_bottom = 100.0
+grow_horizontal = 0
+
+[node name="HealthLabel" type="Label" parent="PlayerInfo/Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -30.0
+offset_right = 80.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "生命值: 100/100"
+horizontal_alignment = 1
+
+[node name="EnergyLabel" type="Label" parent="PlayerInfo/Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = 4.0
+offset_right = 80.0
+offset_bottom = 30.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "能量: 3/3"
+horizontal_alignment = 1
+
+[node name="EndTurnButton" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -80.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "结束回合"

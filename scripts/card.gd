@@ -1,55 +1,93 @@
 # res://scripts/card.gd
-class_name Card # Ensure class_name is at the top
 extends Node2D
 
-# --- Signals ---
-signal card_played(card_instance, targets)
-signal target_selection_needed(card_instance, target_count)
-signal card_hovered(card_instance)
-# --- NEW SIGNAL: Emitted when the card itself is clicked ---
-signal card_clicked(card_instance) # <-- Add this signal
+# 卡牌信号
+signal card_played(card)
+signal card_hovered(card)
+signal card_clicked(card)
 
-# --- Exported Variables ---
-@export var card_name: String = "New Card"
-@export var cost: int = 0
-@export_multiline var description: String = "A card description."
+# 卡牌基本属性
+@export var card_name: String = "Card"
+@export var cost: int = 1
+@export var description: String = "Card description"
+@export var card_image: Texture2D
 
-# Called when the node enters the scene tree for the first time.
+# 卡牌UI组件
+@onready var name_label = $CardUI/NameLabel
+@onready var cost_label = $CardUI/CostLabel
+@onready var description_label = $CardUI/DescriptionLabel
+@onready var card_sprite = $CardUI/CardImage
+
+# 卡牌状态
+var is_playable: bool = true
+var is_being_dragged: bool = false
+var original_position: Vector2
+
 func _ready() -> void:
-	print("card ready %s" % card_name)
+	# 初始化卡牌UI
+	if name_label:
+		name_label.text = card_name
+	if cost_label:
+		cost_label.text = str(cost)
+	if description_label:
+		description_label.text = description
+	if card_sprite and card_image:
+		card_sprite.texture = card_image
+	
+	# 连接输入事件
+	set_process_input(true)
+	# 使用Area2D节点处理输入事件
+	var area = $Area2D
+	if area:
+		area.input_event.connect(_on_input_event)
+
+# 处理卡牌输入事件
+func _on_input_event(_viewport, event, _shape_idx) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				# 卡牌被点击
+				card_clicked.emit(self)
+				if is_playable:
+					# 开始拖动
+					is_being_dragged = true
+					original_position = global_position
+			else:
+				# 释放点击，可能是打出卡牌
+				if is_being_dragged:
+					is_being_dragged = false
+					# 检查是否可以打出卡牌
+					if _can_play_card():
+						play_card()
+					else:
+						# 返回原位置
+						global_position = original_position
+	elif event is InputEventMouseMotion:
+		if is_being_dragged:
+			# 跟随鼠标移动
+			global_position = get_global_mouse_position()
+		else:
+			# 鼠标悬停
+			card_hovered.emit(self)
+
+func _process(delta: float) -> void:
+	# 处理拖动逻辑
+	if is_being_dragged:
+		global_position = get_global_mouse_position()
+
+# 检查是否可以打出卡牌
+func _can_play_card() -> bool:
+	# 这里实现检查逻辑，例如检查能量是否足够
+	return is_playable
+
+# 打出卡牌
+func play_card() -> void:
+	print("Playing card: ", card_name)
+	card_played.emit(self)
+	# 卡牌效果在这里实现
+	_apply_card_effect()
+
+# 应用卡牌效果
+func _apply_card_effect() -> void:
+	# 在子类中重写此方法以实现特定卡牌效果
 	pass
-
-# --- New Method: Get Target Count ---
-func get_target_count() -> int:
-	return 0
-
-# --- Method to initiate target selection (optional helper) ---
-func request_target_selection() -> void:
-	var count = get_target_count()
-	if count > 0:
-		emit_signal("target_selection_needed", self, count)
-
-# --- Updated 'play' method signature ---
-func play(targets: Array = []) -> void:
-	print("Playing base card: %s (Cost: %d)" % [card_name, cost])
-	if not targets.is_empty():
-		print("  Targets: ", targets)
-	emit_signal("card_played", self, targets)
-
-# --- NEW FUNCTION: Handles input events on this card ---
-# This function is called when an input event happens over this node's collision area.
-func _input_event(viewport: Node, event: InputEvent, shape_idx: int) -> void:
-	# Check if the event is a mouse button press (left click)
-	# For touch, you might check for InputEventScreenTouch with pressed=true
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		print("%s card was clicked." % card_name)
-		# Emit the custom signal to notify listeners (like CombatManager)
-		emit_signal("card_clicked", self)
-
-	# You can handle other events like hover (MouseMotion) here too if needed
-	# Check Godot 4 docs for InputEventMouseMotion
-
-
-func _on_card_click_area_input_event(viewport: Node, event: InputEvent, shape_idx: int) -> void:
-	print("%s card was clicked." % card_name)
-	_input_event(viewport, event, shape_idx)

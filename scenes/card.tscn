@@ -1,39 +1,84 @@
-[gd_scene load_steps=4 format=3 uid="uid://i5s2o6pjgjd4"]
+[gd_scene load_steps=4 format=3 uid="uid://bqnhsf8xj4o5p"]
 
-[ext_resource type="Script" uid="uid://b0ptmedighm1m" path="res://scripts/card.gd" id="1_6u4wf"]
-[ext_resource type="Texture2D" uid="uid://bxdgo815hitvx" path="res://assets/images/单独.png" id="2_ktuci"]
+[ext_resource type="Script" uid="uid://dampeqjn1exv7" path="res://scripts/card.gd" id="1_aqnxs"]
+[ext_resource type="Texture2D" uid="uid://bljv4kvmy47xh" path="res://assets/images/card_template.png" id="2_yvxpq"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_6u4wf"]
-size = Vector2(422, 640.5)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_r8g3v"]
+extents = Vector2(100, 150)
 
 [node name="Card" type="Node2D"]
-script = ExtResource("1_6u4wf")
-
-[node name="TextureRect" type="TextureRect" parent="."]
-offset_right = 40.0
-offset_bottom = 40.0
-texture = ExtResource("2_ktuci")
-
-[node name="name" type="Label" parent="."]
-offset_right = 40.0
-offset_bottom = 23.0
-
-[node name="desc" type="Label" parent="."]
-offset_right = 40.0
-offset_bottom = 23.0
-
-[node name="cost" type="Label" parent="."]
-offset_left = 432.0
-offset_top = 596.0
-offset_right = 738.0
-offset_bottom = 855.0
+script = ExtResource("1_aqnxs")
 
 [node name="Area2D" type="Area2D" parent="."]
-position = Vector2(518, 522)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
-position = Vector2(-1, 3)
-shape = SubResource("RectangleShape2D_6u4wf")
-debug_color = Color(0.72059, 0.447572, 0.470103, 0.42)
+position = Vector2(0, 0)
+shape = SubResource("RectangleShape2D_r8g3v")
 
-[connection signal="input_event" from="Area2D" to="." method="_on_card_click_area_input_event"]
+[node name="CardUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Background" type="TextureRect" parent="CardUI"]
+layout_mode = 1
+offset_left = -100.0
+offset_top = -150.0
+offset_right = 100.0
+offset_bottom = 150.0
+texture = ExtResource("2_yvxpq")
+expand_mode = 1
+
+[node name="CardImage" type="TextureRect" parent="CardUI"]
+layout_mode = 1
+offset_left = -80.0
+offset_top = -100.0
+offset_right = 80.0
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="CardUI"]
+layout_mode = 1
+offset_left = -90.0
+offset_top = -130.0
+offset_right = 90.0
+offset_bottom = -105.0
+text = "Card Name"
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="CardUI"]
+layout_mode = 1
+offset_left = -90.0
+offset_top = -130.0
+offset_right = 90.0
+offset_bottom = -105.0
+text = "Card Name"
+horizontal_alignment = 1
+
+[node name="CostLabel" type="Label" parent="CardUI"]
+layout_mode = 1
+offset_left = -90.0
+offset_top = -150.0
+offset_right = -70.0
+offset_bottom = -130.0
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="CardUI"]
+layout_mode = 1
+offset_left = -90.0
+offset_top = 20.0
+offset_right = 90.0
+offset_bottom = 140.0
+text = "Card description text goes here."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
