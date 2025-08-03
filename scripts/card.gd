@@ -33,6 +33,10 @@ func _ready() -> void:
 		description_label.text = description
 	if card_sprite and card_image:
 		card_sprite.texture = card_image
+		# 打印卡牌图片信息
+		print("卡牌 '%s' 图片已加载: %s" % [card_name, card_image.resource_path if card_image.resource_path else "内存中的图片"])
+		print("卡牌 '%s' 图片位置: (%d, %d)" % [card_name, global_position.x, global_position.y])
+		print("卡牌 '%s' 图片大小: 宽度 %d, 高度 %d" % [card_name, card_image.get_width(), card_image.get_height()])
 	
 	# 连接输入事件
 	set_process_input(true)

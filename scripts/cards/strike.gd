@@ -13,6 +13,8 @@ func _ready() -> void:
 	
 	# 加载卡牌图片
 	card_image = load("res://assets/images/strike.png")
+	# 打印打击卡牌特定图片加载信息
+	print("打击卡牌图片已加载: res://assets/images/strike.png")
 	
 	# 调用父类的_ready方法初始化UI
 	super._ready()

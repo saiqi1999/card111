@@ -10,6 +10,7 @@ extends Node2D
 @onready var health_label = $UI2/PlayerInfo/Panel/HealthLabel
 @onready var energy_label = $UI2/PlayerInfo/Panel/EnergyLabel
 @onready var end_turn_button = $UI2/EndTurnButton
+@onready var background = $background
 
 func _ready() -> void:
 	print("Main scene initialized")
@@ -19,6 +20,12 @@ func _ready() -> void:
 		# 启动游戏，设置为PLAYING状态
 		game_manager.change_state(game_manager.GameState.PLAYING)
 		print("Game started")
+	
+	# 打印背景图片信息
+	if background and background.texture:
+		print("背景图片已加载: %s" % background.texture.resource_path)
+		print("背景图片位置: (%d, %d)" % [background.position.x, background.position.y])
+		print("背景图片大小: 宽度 %d, 高度 %d" % [background.texture.get_width() * background.scale.x, background.texture.get_height() * background.scale.y])
 		
 	# 设置卡牌管理器
 	card_manager.hand_container = hand_container
