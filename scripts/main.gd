@@ -27,6 +27,20 @@ func _ready() -> void:
 		print("背景图片位置: (%d, %d)" % [background.position.x, background.position.y])
 		print("背景图片大小: 宽度 %d, 高度 %d" % [background.texture.get_width() * background.scale.x, background.texture.get_height() * background.scale.y])
 		
+		# 计算并打印背景四个顶点的坐标
+		var width = background.texture.get_width() * background.scale.x
+		var height = background.texture.get_height() * background.scale.y
+		var top_left = Vector2(background.position.x - width/2, background.position.y - height/2)
+		var top_right = Vector2(background.position.x + width/2, background.position.y - height/2)
+		var bottom_left = Vector2(background.position.x - width/2, background.position.y + height/2)
+		var bottom_right = Vector2(background.position.x + width/2, background.position.y + height/2)
+		
+		print("背景四个顶点坐标:")
+		print("左上角: (%d, %d)" % [top_left.x, top_left.y])
+		print("右上角: (%d, %d)" % [top_right.x, top_right.y])
+		print("左下角: (%d, %d)" % [bottom_left.x, bottom_left.y])
+		print("右下角: (%d, %d)" % [bottom_right.x, bottom_right.y])
+		
 	# 设置卡牌管理器
 	card_manager.hand_container = hand_container
 	

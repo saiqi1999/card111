@@ -37,6 +37,20 @@ func _ready() -> void:
 		print("卡牌 '%s' 图片已加载: %s" % [card_name, card_image.resource_path if card_image.resource_path else "内存中的图片"])
 		print("卡牌 '%s' 图片位置: (%d, %d)" % [card_name, global_position.x, global_position.y])
 		print("卡牌 '%s' 图片大小: 宽度 %d, 高度 %d" % [card_name, card_image.get_width(), card_image.get_height()])
+		
+		# 计算并打印卡牌四个顶点的坐标
+		var width = card_sprite.size.x
+		var height = card_sprite.size.y
+		var top_left = global_position + card_sprite.position - Vector2(width/2, height/2)
+		var top_right = global_position + card_sprite.position + Vector2(width/2, -height/2)
+		var bottom_left = global_position + card_sprite.position + Vector2(-width/2, height/2)
+		var bottom_right = global_position + card_sprite.position + Vector2(width/2, height/2)
+		
+		print("卡牌 '%s' 四个顶点坐标:" % card_name)
+		print("左上角: (%d, %d)" % [top_left.x, top_left.y])
+		print("右上角: (%d, %d)" % [top_right.x, top_right.y])
+		print("左下角: (%d, %d)" % [bottom_left.x, bottom_left.y])
+		print("右下角: (%d, %d)" % [bottom_right.x, bottom_right.y])
 	
 	# 连接输入事件
 	set_process_input(true)
