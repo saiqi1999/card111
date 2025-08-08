@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://cye3wgdfifsdw"]
+
+[ext_resource type="Script" uid="uid://cegnmi15f68o2" path="res://scripts/debug/button_handler.gd" id="1_ixvnl"]
+
+[node name="Debug" type="Node2D"]
+
+[node name="ButtonHandler" type="Node" parent="."]
+script = ExtResource("1_ixvnl")
+
+[node name="Button" type="Button" parent="."]
+offset_left = 860.0
+offset_top = 540.0
+offset_right = 1060.0
+offset_bottom = 600.0
+text = "点击我"
+
+[connection signal="pressed" from="Button" to="ButtonHandler" method="_on_button_pressed"]

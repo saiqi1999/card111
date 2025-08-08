@@ -8,10 +8,13 @@
   - `images/` - 图像资源
 - `scenes/` - 游戏场景文件夹
   - `root.tscn` - 主场景
+  - `card.tscn` - 卡牌场景
+  - `debug.tscn` - 调试场景
 - `scripts/` - 游戏脚本文件夹
   - `cards/` - 卡牌系统相关脚本
+  - `debug/` - 调试相关脚本
   - `mobs/` - 怪物相关脚本
-  - `button_handler.gd` - 按钮事件处理脚本
+  - `utils/` - 全局工具脚本
 
 ## 功能概述
 
@@ -21,6 +24,14 @@
 
 - `CardPackBase` - 卡包基类，提供卡牌管理的基本功能
 - `StrikeCardPack` - 打击卡包，继承自卡包基类
+- `CardUtil` - 卡牌工具类，提供卡牌显示和工具函数
+
+### 全局工具系统
+
+项目实现了全局工具系统：
+
+- `GlobalUtil` - 全局工具类，提供通用工具方法
+- `GlobalUtilLoader` - 全局工具加载器，负责初始化全局工具实例
 
 ### 用户界面
 

@@ -11,9 +11,8 @@ func _init():
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/strike.png")
 	
+	# 设置卡牌数据
+	set_card_data("打击", "造成6点伤害")
+	
 	# 这里可以添加特定于打击卡包的初始化逻辑
-	# 例如预先添加一些打击卡牌
-	# 注意：这里需要Card类已经实现
-	# 如果Card类尚未实现，可以先注释掉这部分代码
-	# var strike_card = Card.new("打击", "造成6点伤害", 1)
-	# add_card(strike_card)
+# 例如添加特定功能或属性

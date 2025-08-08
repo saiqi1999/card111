@@ -1,17 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0b3bhwsxe03a"]
+[gd_scene load_steps=3 format=3 uid="uid://b0b3bhwsxe03a"]
 
-[ext_resource type="Script" uid="uid://chm8c6fatxxiu" path="res://scripts/button_handler.gd" id="1_ixvnl"]
+[ext_resource type="PackedScene" uid="uid://cye3wgdfifsdw" path="res://scenes/debug.tscn" id="1_ixvnl"]
+[ext_resource type="Script" uid="uid://bw5dohy8j5gx" path="res://scripts/utils/global_util_loader.gd" id="2_vxe4f"]
 
-[node name="Node2D" type="Node2D"]
+[node name="Root" type="Node2D"]
 
-[node name="ButtonHandler" type="Node" parent="."]
-script = ExtResource("1_ixvnl")
+[node name="Debug" parent="." instance=ExtResource("1_ixvnl")]
 
-[node name="Button" type="Button" parent="."]
-offset_left = 860.0
-offset_top = 540.0
-offset_right = 1060.0
-offset_bottom = 600.0
-text = "点击我"
-
-[connection signal="pressed" from="Button" to="ButtonHandler" method="_on_button_pressed"]
+[node name="Util" type="Node" parent="."]
+script = ExtResource("2_vxe4f")

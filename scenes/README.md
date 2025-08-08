@@ -5,6 +5,8 @@
 ## 文件结构
 
 - `root.tscn` - 主场景，游戏的入口点
+- `debug.tscn` - 调试场景，包含调试按钮和功能
+- `card.tscn` - 卡牌场景，用于显示卡牌
 
 ## 场景说明
 
@@ -12,11 +14,32 @@
 
 `root.tscn` 是游戏的主场景，也是游戏启动时加载的第一个场景。目前包含以下节点：
 
-- `Node2D` - 根节点
-  - `ButtonHandler` - 按钮事件处理节点，附加了button_handler.gd脚本
+- `Root` - 根节点（Node2D类型）
+  - `Debug` - 调试场景实例，作为子场景挂载在根节点下
+
+### 调试场景 (Debug)
+
+`debug.tscn` 是一个调试工具场景，可以挂载在主场景中。包含以下节点：
+
+- `Debug` - 根节点（Node2D类型）
+  - `ButtonHandler` - 按钮事件处理节点，附加了scripts/debug/button_handler.gd脚本
   - `Button` - 按钮控件，位于屏幕中央偏下位置，文本为"点击我"
 
-按钮的pressed信号已连接到ButtonHandler节点的_on_button_pressed方法。
+按钮的pressed信号已连接到ButtonHandler节点的_on_button_pressed方法。点击按钮时，会在root场景中创建一个card场景实例，并通过类型字符串"strike"加载打击卡牌数据。
+
+### 卡牌场景 (Card)
+
+`card.tscn` 是用于显示卡牌的场景。包含以下节点：
+
+- `Card` - 根节点（Node2D类型），附加了scripts/cards/card_util.gd脚本
+  - `Sprite2D` - 卡牌图像
+  - `Label` - 卡牌名称标签
+  - `Description` - 卡牌描述标签
+
+卡牌场景可以通过以下方式加载数据：
+1. `load_from_card_type("类型字符串")` - 通过类型字符串加载卡牌数据（推荐）
+2. `load_from_card_pack(card_pack)` - 从卡包实例加载数据
+3. `set_card_data(名称, 描述, 图像)` - 直接设置卡牌数据
 
 ## 场景设计
 
