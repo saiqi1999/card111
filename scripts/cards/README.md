@@ -60,6 +60,31 @@ card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 var strike_pack = CardUtil.get_card_pack_by_type("strike")
 ```
 
+卡牌工具还提供了随机移动卡牌到非中心区域的静态方法：
+
+```gdscript
+# 随机移动卡牌到非中心区域
+var move_distance = CardUtil.random_move_card(card_instance)
+print("卡牌移动了：", move_distance)
+```
+
+这个方法会将卡牌实例随机移动到一个非中心区域（x和y坐标在-200到200范围内，但不在-50到50范围内），并使用Tween动画实现平滑移动效果。方法返回移动的距离向量，可用于后续处理。
+
+#### 卡牌尺寸
+
+卡牌现在使用固定尺寸，不再由图片大小决定：
+
+- 卡牌宽度：200像素
+- 卡牌高度：300像素
+
+卡牌图像会自动缩放以适应这个固定尺寸，同时保持图像的原始宽高比。卡牌背景是一个带有圆角和边框的面板，确保所有卡牌具有一致的外观。
+
+```gdscript
+# 卡牌固定尺寸常量
+const CARD_WIDTH: float = 200.0  # 卡牌宽度
+const CARD_HEIGHT: float = 300.0  # 卡牌高度
+```
+
 ## 扩展说明
 
 要创建新的卡包类型，只需继承CardPackBase并根据需要重写方法：

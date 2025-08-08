@@ -1,26 +1,44 @@
-[gd_scene load_steps=2 format=3 uid="uid://dqvnpq8cqvhx8"]
+[gd_scene load_steps=3 format=3 uid="uid://dqvnpq8cqvhx8"]
 
-[ext_resource type="Script" path="res://scripts/cards/card_util.gd" id="1_ixvnl"]
+[ext_resource type="Script" uid="uid://c3408fps2d6bj" path="res://scripts/cards/card_util.gd" id="1_ixvnl"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yjk2p"]
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="Card" type="Node2D"]
 script = ExtResource("1_ixvnl")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-
-[node name="Label" type="Label" parent="."]
+[node name="CardBackground" type="Panel" parent="."]
 offset_left = -100.0
 offset_top = -150.0
 offset_right = 100.0
-offset_bottom = -120.0
+offset_bottom = 150.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_yjk2p")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -30)
+
+[node name="Label" type="Label" parent="."]
+offset_left = -90.0
+offset_top = -140.0
+offset_right = 90.0
+offset_bottom = -110.0
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Description" type="Label" parent="."]
-offset_left = -100.0
-offset_top = 50.0
-offset_right = 100.0
-offset_bottom = 150.0
+offset_left = -90.0
+offset_top = 70.0
+offset_right = 90.0
+offset_bottom = 140.0
 horizontal_alignment = 1
 vertical_alignment = 1
-autosize_mode = 2
 text_overrun_behavior = 3
+max_lines_visible = 4

@@ -22,10 +22,17 @@
 `debug.tscn` 是一个调试工具场景，可以挂载在主场景中。包含以下节点：
 
 - `Debug` - 根节点（Node2D类型）
-  - `ButtonHandler` - 按钮事件处理节点，附加了scripts/debug/button_handler.gd脚本
-  - `Button` - 按钮控件，位于屏幕中央偏下位置，文本为"点击我"
+  - `ButtonHandler` - 按钮和输入框事件处理节点，附加了scripts/debug/button_handler.gd脚本
+  - `Button` - 按钮控件，位于屏幕右侧偏下位置，文本为"点击我"
+  - `InputField` - 输入框控件，位于屏幕左侧偏下位置，用于接收文本输入
 
-按钮的pressed信号已连接到ButtonHandler节点的_on_button_pressed方法。点击按钮时，会在root场景中创建一个card场景实例，并通过类型字符串"strike"加载打击卡牌数据。
+按钮的pressed信号已连接到ButtonHandler节点的_on_button_pressed方法。点击按钮时，会在root场景中创建三个不同位置的card场景实例，并通过类型字符串"strike"加载打击卡牌数据。
+
+输入框的text_submitted信号已连接到ButtonHandler节点的_on_input_field_text_submitted方法。当在输入框中输入文本并按下回车键时，会触发文本提交事件。特别地：
+- 当输入"hello"时，会打印特定的问候信息
+- 当输入"reboot"时，会重启root节点，清除所有卡牌并重新初始化全局工具
+- 当输入"slide"时，会创建一张从屏幕左侧滑动到中央的卡牌，并添加轻微的上下浮动动画
+- 当输入"random"时，会创建一张卡牌并将其随机移动到非中心区域（X和Y坐标在-200到200范围内，但避开-50到50的中心区域）
 
 ### 卡牌场景 (Card)
 

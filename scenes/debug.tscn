@@ -14,4 +14,12 @@ offset_right = 1060.0
 offset_bottom = 600.0
 text = "点击我"
 
+[node name="InputField" type="LineEdit" parent="."]
+offset_left = 400.0
+offset_top = 540.0
+offset_right = 700.0
+offset_bottom = 600.0
+placeholder_text = "请输入文本..."
+
 [connection signal="pressed" from="Button" to="ButtonHandler" method="_on_button_pressed"]
+[connection signal="text_submitted" from="InputField" to="ButtonHandler" method="_on_input_field_text_submitted"]
