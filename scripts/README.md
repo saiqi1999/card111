@@ -12,12 +12,12 @@
 - 输入处理：`_input_event()`
 
 ### `combat_manager.gd`
-战斗管理器，负责协调游戏中的战斗流程：
-- 信号：`target_selection_requested`, `card_play_failed`, `card_played_successfully`
-- 玩家能量管理
-- 卡牌使用逻辑
-- 目标选择系统
-- 卡组管理（抽牌堆、弃牌堆、手牌）
+战斗管理器，负责管理玩家属性和战斗相关功能：
+- 信号：`health_changed`, `energy_changed`, `player_died`
+- 玩家属性管理（生命值、能量）
+- 战斗相关方法（造成伤害、治疗、获得护甲等）
+- 回合管理（回合开始/结束）
+- 抽牌功能（目前为空实现）
 
 ### `mobs.gd`
 怪物基类，定义了怪物的基本属性和行为：

@@ -3,9 +3,8 @@ extends Node2D
 
 # 节点引用
 @onready var game_manager = $GameManager
-@onready var card_manager = $CardManager
+@onready var combat_manager = $CombatManager
 @onready var hand_container = $HandArea/HandContainer
-@onready var player_manager = $PlayerManager
 @onready var ui = $UI2
 @onready var health_label = $UI2/PlayerInfo/Panel/HealthLabel
 @onready var energy_label = $UI2/PlayerInfo/Panel/EnergyLabel
@@ -41,12 +40,10 @@ func _ready() -> void:
 		print("左下角: (%d, %d)" % [bottom_left.x, bottom_left.y])
 		print("右下角: (%d, %d)" % [bottom_right.x, bottom_right.y])
 		
-	# 设置卡牌管理器
-	card_manager.hand_container = hand_container
-	
-	# 设置玩家管理器
-	player_manager.health_label = health_label
-	player_manager.energy_label = energy_label
+	# 设置战斗管理器
+	combat_manager.hand_container = hand_container
+	combat_manager.health_label = health_label
+	combat_manager.energy_label = energy_label
 	
 	# 连接结束回合按钮信号
 	end_turn_button.pressed.connect(_on_end_turn_button_pressed)
@@ -62,31 +59,11 @@ func _process(delta: float) -> void:
 
 # 初始化测试牌库
 func initialize_test_deck() -> void:
-	# 创建测试卡牌数据
-	var test_cards = [
-		{"name": "攻击", "cost": 1, "description": "造成6点伤害", "script": "res://scripts/cards/strike.gd"},
-		{"name": "防御", "cost": 1, "description": "获得5点护甲"},
-		{"name": "抽牌", "cost": 0, "description": "抽2张牌"},
-		{"name": "强力打击", "cost": 2, "description": "造成10点伤害"},
-		{"name": "治疗", "cost": 1, "description": "恢复4点生命"},
-		{"name": "火球术", "cost": 2, "description": "对所有敌人造成4点伤害"},
-		{"name": "闪电链", "cost": 3, "description": "造成7点伤害，并对相邻敌人造成3点伤害"},
-		{"name": "冰冻", "cost": 2, "description": "冻结一个敌人1回合"},
-		{"name": "毒药", "cost": 1, "description": "施加3层中毒"},
-		{"name": "能量药水", "cost": 0, "description": "获得1点能量"}
-	]
-	
-	# 初始化牌库
-	card_manager.initialize_deck(test_cards)
-	
-	# 抽初始手牌
-	card_manager.draw_starting_hand()
-	
 	# 初始化玩家状态
-	player_manager.set_max_health(80)
-	player_manager.set_health(80)
-	player_manager.set_max_energy(3)
-	player_manager.set_energy(3)
+	combat_manager.set_max_health(80)
+	combat_manager.set_health(80)
+	combat_manager.set_max_energy(3)
+	combat_manager.set_energy(3)
 	
 	# 开始第一个回合
 	start_player_turn()
@@ -94,21 +71,18 @@ func initialize_test_deck() -> void:
 # 玩家回合开始
 func start_player_turn() -> void:
 	# 恢复能量
-	player_manager.restore_energy(player_manager.max_energy)
+	combat_manager.restore_energy(combat_manager.max_energy)
 	
 	# 处理回合开始效果
-	player_manager.on_turn_start()
+	combat_manager.on_turn_start()
 	
 	# 抽牌
-	card_manager.draw_cards(5)
+	combat_manager.draw_card()
 
 # 玩家回合结束
 func end_player_turn() -> void:
 	# 处理回合结束效果
-	player_manager.on_turn_end()
-	
-	# 弃掉所有手牌
-	card_manager.discard_hand()
+	combat_manager.on_turn_end()
 	
 	# 开始新回合
 	start_player_turn()

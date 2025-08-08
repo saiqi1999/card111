@@ -1,12 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://c5pefett4h1pi"]
+[gd_scene load_steps=6 format=3 uid="uid://c5pefett4h1pi"]
 
-[ext_resource type="Texture2D" uid="uid://i7i134lmtupg" path="res://assets/images/d97559ea-798f-41f9-9097-441b85e7626e.png" id="1_0wfyh"]
+[ext_resource type="Texture2D" uid="uid://i7i134lmtupg" path="res://assets/images/card_template.png" id="1_0wfyh"]
 [ext_resource type="Script" uid="uid://6jbvf1rh0ia1" path="res://scripts/main.gd" id="1_yvxpq"]
 [ext_resource type="Script" uid="uid://bdk2omnxdmyj1" path="res://scripts/game_manager.gd" id="3_lfgxm"]
-[ext_resource type="Script" uid="uid://de07u01pa4q0p" path="res://scripts/card_manager.gd" id="4_lfgxm"]
-[ext_resource type="PackedScene" uid="uid://bqnhsf8xj4o5p" path="res://scenes/card.tscn" id="5_lfgxm"]
-[ext_resource type="Script" uid="uid://dyxvdt002bce4" path="res://scripts/player_manager.gd" id="6_lfgxm"]
-[ext_resource type="PackedScene" path="res://scenes/ui.tscn" id="7_lfgxm"]
+[ext_resource type="Script" path="res://scripts/combat_manager.gd" id="4_lfgxm"]
+[ext_resource type="PackedScene" path="res://scenes/ui.tscn" id="5_lfgxm"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_yvxpq")
@@ -35,16 +33,12 @@ text = "重构后的卡牌游戏"
 [node name="GameManager" type="Node" parent="."]
 script = ExtResource("3_lfgxm")
 
-[node name="CardManager" type="Node" parent="."]
+[node name="CombatManager" type="Node" parent="."]
 script = ExtResource("4_lfgxm")
-card_scene = ExtResource("5_lfgxm")
 
 [node name="HandArea" type="Node2D" parent="."]
 position = Vector2(640, 600)
 
 [node name="HandContainer" type="Node2D" parent="HandArea"]
 
-[node name="PlayerManager" type="Node" parent="."]
-script = ExtResource("6_lfgxm")
-
-[node name="UI2" parent="." instance=ExtResource("7_lfgxm")]
+[node name="UI2" parent="." instance=ExtResource("5_lfgxm")]
