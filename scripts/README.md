@@ -1,66 +1,47 @@
 # 脚本文件夹 (Scripts)
 
-此文件夹包含游戏中使用的所有GDScript脚本文件(.gd)。
+此文件夹包含游戏中使用的所有脚本文件。
 
-## 核心脚本
+## 文件夹结构
 
-### `card.gd`
-基础卡牌类，定义了卡牌的基本属性和行为：
-- 信号：`card_played`, `target_selection_needed`, `card_hovered`, `card_clicked`
-- 属性：名称、消耗、描述
-- 方法：`play()`, `get_target_count()`, `request_target_selection()`
-- 输入处理：`_input_event()`
+- `cards/` - 卡牌系统相关脚本
+- `mobs/` - 怪物相关脚本
+- `button_handler.gd` - 按钮事件处理脚本
 
-### `combat_manager.gd`
-战斗管理器，负责管理玩家属性和战斗相关功能：
-- 信号：`health_changed`, `energy_changed`, `player_died`
-- 玩家属性管理（生命值、能量）
-- 战斗相关方法（造成伤害、治疗、获得护甲等）
-- 回合管理（回合开始/结束）
-- 抽牌功能（目前为空实现）
+## 脚本说明
 
-### `mobs.gd`
-怪物基类，定义了怪物的基本属性和行为：
-- 信号：`health_changed`, `died`, `monster_clicked`
-- 属性：名称、生命值、攻击力、防御力
-- 方法：`take_damage()`, `die()`
-- 输入处理：`_input_event()`
+### 按钮处理器 (ButtonHandler)
 
-### `slime.gd`
-史莱姆怪物类，继承自`mobs.gd`，添加了特定的行为：
-- 特有属性：`is_jiggly`
-- 重写方法：`take_damage()`, `die()`
-- 与战斗管理器的交互
+`button_handler.gd` 实现了一个简单的按钮点击事件处理器，当按钮被点击时会在控制台打印信息。
 
-### `strike.gd`
-打击卡牌类，继承自`card.gd`，实现了特定的攻击效果：
-- 特有属性：`damage`
-- 重写方法：`get_target_count()`, `play()`
-- 目标选择和伤害计算
+```gdscript
+func _on_button_pressed():
+    print("按钮被点击了！")
+```
 
-## 脚本继承结构
+### 卡牌系统
 
-游戏使用脚本继承机制来组织代码：
-- `card.gd` → `strike.gd`（基础卡牌 → 特定卡牌）
-- `mobs.gd` → `slime.gd`（基础怪物 → 特定怪物）
+卡牌系统脚本位于 `cards/` 子文件夹中，详细信息请参阅该文件夹中的README.md文件。
 
-这种结构允许轻松扩展游戏内容，同时保持代码的一致性和可维护性。
+### 怪物系统
 
-## 添加新脚本
+怪物系统脚本将位于 `mobs/` 子文件夹中，目前尚未实现。
 
-### 添加新卡牌脚本
-1. 创建新的GDScript文件，继承自`card.gd`
-2. 定义特定的属性和方法
-3. 重写`get_target_count()`和`play()`方法以实现卡牌效果
+## 开发指南
 
-### 添加新怪物脚本
-1. 创建新的GDScript文件，继承自`mobs.gd`
-2. 定义特定的属性和行为
-3. 根据需要重写`take_damage()`和`die()`方法
+### 添加新脚本
 
-## 脚本通信
+添加新脚本时，请遵循以下规范：
 
-脚本之间通过以下方式通信：
-- 信号（Signals）用于事件通知
-- 直接方法调用用于即时交互
-- 节点引用用于访问其他对象
+1. 使用有意义的文件名，采用snake_case命名法
+2. 在脚本开头添加类注释，说明脚本的用途
+3. 为公共方法和属性添加注释
+4. 相关功能的脚本应放在同一个子文件夹中
+5. 如果创建新的子系统，请创建相应的子文件夹并添加README.md文件
+
+### 代码风格
+
+- 使用GDScript的内置类型标注
+- 使用有意义的变量和函数名
+- 遵循Godot的信号系统进行事件处理
+- 尽量使用Godot的内置功能而不是自定义实现
