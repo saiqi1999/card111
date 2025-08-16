@@ -22,6 +22,7 @@ var card_pack: CardPackBase = null
 
 # 初始化函数
 func _ready():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 _ready() 函数")
 	# 更新卡牌显示
 	update_display()
 	
@@ -30,9 +31,13 @@ func _ready():
 	if background:
 		background.size = Vector2(CARD_WIDTH, CARD_HEIGHT)
 		background.position = Vector2(-CARD_WIDTH/2, -CARD_HEIGHT/2)
+	
+	# 添加点击区域
+	setup_input_detection()
 
 # 设置卡牌数据
 func set_card_data(p_name: String, p_description: String, p_image: Texture2D = null):
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 set_card_data() 函数，卡牌名称: ", p_name)
 	card_name = p_name
 	description = p_description
 	card_image = p_image
@@ -43,6 +48,7 @@ func set_card_data(p_name: String, p_description: String, p_image: Texture2D = n
 
 # 更新卡牌显示
 func update_display():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 update_display() 函数")
 	# 更新文本
 	label.text = card_name
 	desc_label.text = description
@@ -56,6 +62,7 @@ func update_display():
 
 # 调整精灵大小以适应卡牌固定尺寸
 func adjust_sprite_size():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 adjust_sprite_size() 函数")
 	if sprite.texture == null:
 		return
 		
@@ -74,6 +81,7 @@ func adjust_sprite_size():
 	
 # 从卡包加载卡牌
 func load_from_card_pack(p_card_pack):
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 load_from_card_pack() 函数")
 	if p_card_pack is CardPackBase:
 		# 保存卡包引用
 		card_pack = p_card_pack
@@ -88,6 +96,7 @@ func load_from_card_pack(p_card_pack):
 
 # 通过卡包类型字符串加载卡牌
 func load_from_card_type(type_name: String):
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 load_from_card_type() 函数，类型: ", type_name)
 	# 通过类型字符串获取卡包实例
 	var pack = get_card_pack_by_type(type_name)
 	
@@ -142,3 +151,102 @@ static func random_move_card(card_instance: Node2D):
 	
 	# 返回移动的距离向量
 	return Vector2(random_x, random_y)
+
+# 设置输入检测
+func setup_input_detection():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 setup_input_detection() 函数")
+	
+	# 关键修复：设置所有Control节点的mouse_filter为IGNORE，避免阻挡输入事件
+	var card_background = get_node("CardBackground")
+	if card_background and card_background is Control:
+		card_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 设置CardBackground mouse_filter为IGNORE")
+	
+	# 设置Label节点的mouse_filter
+	var label = get_node("Label")
+	if label and label is Control:
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 设置Label mouse_filter为IGNORE")
+	
+	# 设置Description节点的mouse_filter
+	var description = get_node("Description")
+	if description and description is Control:
+		description.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 设置Description mouse_filter为IGNORE")
+	
+	# 创建一个Area2D节点用于检测点击
+	var click_area = Area2D.new()
+	click_area.name = "ClickArea"
+	
+	# 关键设置：启用输入检测
+	click_area.input_pickable = true
+	click_area.monitoring = true
+	click_area.monitorable = true
+	# 设置碰撞层，这是输入检测的关键要求
+	click_area.collision_layer = 1
+	click_area.collision_mask = 0  # 不需要检测碰撞，只需要输入
+	
+	add_child(click_area)
+	
+	# 将Area2D移动到最上层，确保点击检测优先级
+	move_child(click_area, get_child_count() - 1)
+	
+	# 创建碰撞形状
+	var collision_shape = CollisionShape2D.new()
+	collision_shape.name = "CollisionShape"
+	collision_shape.position = Vector2(0, 0) # 确保碰撞形状位于卡牌中心
+	click_area.add_child(collision_shape)
+	
+	# 创建矩形形状
+	var shape = RectangleShape2D.new()
+	shape.size = Vector2(CARD_WIDTH, CARD_HEIGHT)
+	collision_shape.shape = shape
+	
+	# 打印shape的绝对坐标范围
+	var global_pos = global_position
+	var shape_left = global_pos.x - CARD_WIDTH / 2
+	var shape_right = global_pos.x + CARD_WIDTH / 2
+	var shape_top = global_pos.y - CARD_HEIGHT / 2
+	var shape_bottom = global_pos.y + CARD_HEIGHT / 2
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " Shape绝对坐标范围:")
+	print("  左边界:", shape_left, " 右边界:", shape_right)
+	print("  上边界:", shape_top, " 下边界:", shape_bottom)
+	print("  中心点:", global_pos)
+	
+	# 连接输入事件
+	click_area.input_event.connect(_on_card_input_event)
+	# 连接鼠标进入和离开事件用于调试
+	click_area.mouse_entered.connect(_on_mouse_entered)
+	click_area.mouse_exited.connect(_on_mouse_exited)
+	
+	# 添加调试信息
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " Area2D设置完成:")
+	print("  - input_pickable:", click_area.input_pickable)
+	print("  - collision_layer:", click_area.collision_layer)
+	print("  - collision_mask:", click_area.collision_mask)
+
+# 处理卡牌输入事件
+func _on_card_input_event(_viewport, event, _shape_idx):
+	# 只在鼠标点击时打印调试信息，避免鼠标移动时频繁触发
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 检测到鼠标左键点击")
+		# 打印卡牌信息
+		print_card_info()
+
+# 鼠标进入事件（调试用）
+func _on_mouse_entered():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 鼠标进入卡牌区域")
+
+# 鼠标离开事件（调试用）
+func _on_mouse_exited():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 鼠标离开卡牌区域")
+
+# 打印卡牌信息
+func print_card_info():
+	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 print_card_info() 函数")
+	print("===== 卡牌信息 =====")
+	print("名称: ", card_name)
+	print("描述: ", description)
+	if card_pack:
+		print("卡包: ", card_pack.pack_name)
+	print("===================")

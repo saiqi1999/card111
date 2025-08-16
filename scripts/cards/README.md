@@ -53,6 +53,16 @@ card_instance.load_from_card_pack(card_pack)
 card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 ```
 
+#### 点击检测功能
+
+卡牌工具包含完整的点击检测系统：
+
+- **自动输入检测设置** - 在`_ready()`函数中自动调用`setup_input_detection()`
+- **Control节点处理** - 自动设置Panel、Label等Control节点的`mouse_filter`为`IGNORE`，避免阻挡输入事件
+- **Area2D点击检测** - 创建Area2D和CollisionShape2D实现精确的点击检测
+- **调试信息系统** - 包含详细的调试打印，帮助追踪函数调用和事件触发
+- **鼠标事件处理** - 支持鼠标进入、离开和点击事件的检测
+
 卡牌工具还提供了通过类型字符串获取卡包实例的静态方法：
 
 ```gdscript
