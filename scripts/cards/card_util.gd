@@ -21,6 +21,8 @@ var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
 # 存储当前活动的Tween引用，用于在拖拽时停止动画
 var active_tween: Tween = null
+# 鼠标按下时的位置，用于判断是否为拖动
+var mouse_press_position: Vector2 = Vector2.ZERO
 
 # 卡牌层级管理
 static var card_layer_counter: int = 0  # 全局层级计数器
@@ -332,15 +334,15 @@ func setup_input_detection():
 		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置CardBackground mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)
 	
 	# 设置Label节点的mouse_filter
-	var label = get_node("Label")
-	if label and label is Control:
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var label_node = get_node("Label")
+	if label_node and label_node is Control:
+		label_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置Label mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)
 	
 	# 设置Description节点的mouse_filter
-	var description = get_node("Description")
-	if description and description is Control:
-		description.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var description_node = get_node("Description")
+	if description_node and description_node is Control:
+		description_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置Description mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)
 	
 	# 创建一个Area2D节点用于检测点击
@@ -399,7 +401,7 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 	# 处理鼠标按钮事件
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 检测到鼠标左键点击", GlobalUtil.LogLevel.DEBUG)
+			GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 检测到鼠标左键按下", GlobalUtil.LogLevel.DEBUG)
 			
 			# 检查当前卡牌是否是点击位置的最上层卡牌
 			var mouse_pos = get_global_mouse_position()
@@ -407,13 +409,8 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 				GlobalUtil.log("卡牌不是最上层，忽略点击事件", GlobalUtil.LogLevel.DEBUG)
 				return
 			
-			# 触发卡牌的个性化点击效果
-			if on_click.is_valid():
-				GlobalUtil.log("触发卡牌点击效果", GlobalUtil.LogLevel.DEBUG)
-				on_click.call(self)
-			
-			# 打印卡牌信息
-			print_card_info()
+			# 记录鼠标按下时的位置
+			mouse_press_position = get_global_mouse_position()
 			
 			# 将当前卡牌移动到最上层
 			bring_to_front()
@@ -430,6 +427,7 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 			modulate.a = GlobalConstants.CARD_DRAG_ALPHA  # 拖拽时半透明效果
 			GlobalUtil.log("开始拖拽卡牌，偏移量:" + str(drag_offset), GlobalUtil.LogLevel.DEBUG)
 
+
 # 全局输入处理，用于处理拖拽时的鼠标释放事件
 func _input(event):
 	# 只有在拖拽状态下才处理全局输入
@@ -438,6 +436,24 @@ func _input(event):
 		
 	# 处理鼠标释放事件
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		# 计算拖动距离
+		var mouse_release_position = get_global_mouse_position()
+		var drag_distance = mouse_press_position.distance_to(mouse_release_position)
+		
+		GlobalUtil.log("鼠标抬起，拖动距离:" + str(drag_distance), GlobalUtil.LogLevel.DEBUG)
+		
+		# 如果拖动距离小于阈值，认为是点击而不是拖动
+		if drag_distance < GlobalConstants.DRAG_THRESHOLD:
+			# 触发卡牌的个性化点击效果
+			if on_click.is_valid():
+				GlobalUtil.log("触发卡牌点击效果", GlobalUtil.LogLevel.DEBUG)
+				on_click.call(self)
+			
+			# 打印卡牌信息
+			print_card_info()
+		else:
+			GlobalUtil.log("检测到拖动行为，不触发点击效果", GlobalUtil.LogLevel.DEBUG)
+		
 		# 结束拖拽
 		is_dragging = false
 		modulate.a = GlobalConstants.CARD_NORMAL_ALPHA  # 恢复透明度

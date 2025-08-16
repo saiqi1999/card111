@@ -119,6 +119,16 @@ func _on_input_field_text_submitted(text: String):
 		
 		# 清空输入框
 		input_field.text = ""
+	elif text.to_lower() == "slime":
+		# 创建Want Slime卡牌
+		GlobalUtil.log("创建Want Slime卡牌...", GlobalUtil.LogLevel.INFO)
+		create_specific_card("want_slime")
+		input_field.text = ""
+	elif text.to_lower() == "skill":
+		# 创建Basic Skill Pack卡牌
+		GlobalUtil.log("创建Basic Skill Pack卡牌...", GlobalUtil.LogLevel.INFO)
+		create_specific_card("basic_skill_pack")
+		input_field.text = ""
 	elif text.to_lower() == "help":
 		# 显示帮助信息
 		show_help()
@@ -235,7 +245,7 @@ func create_random_type_card():
 	var start_position = GlobalConstants.SCREEN_CENTER
 	
 	# 定义可用的卡牌类型
-	var card_types = ["strike", "defend"]
+	var card_types = ["strike", "defend", "want_slime", "basic_skill_pack"]
 	
 	# 随机选择卡牌类型
 	var random_type = card_types[randi() % card_types.size()]
@@ -245,7 +255,18 @@ func create_random_type_card():
 	
 	# 设置卡牌名称
 	card_count += 1
-	var type_name = "打击" if random_type == "strike" else "防御"
+	var type_name = ""
+	match random_type:
+		"strike":
+			type_name = "打击"
+		"defend":
+			type_name = "防御"
+		"want_slime":
+			type_name = "Want Slime"
+		"basic_skill_pack":
+			type_name = "Basic Skill Pack"
+		_:
+			type_name = "未知"
 	card_instance.card_name = "随机" + type_name + " #" + str(card_count)
 	
 	# 更新显示
@@ -265,13 +286,48 @@ func show_help():
 	GlobalUtil.log("reboot - 重启root节点，清除所有卡牌", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("slide - 创建滑动卡牌", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("random - 创建随机移动打击卡牌", GlobalUtil.LogLevel.INFO)
-	GlobalUtil.log("random2 - 创建随机移动的打击或防御卡牌", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("random2 - 创建随机移动的所有类型卡牌", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("slime - 创建Want Slime卡牌", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("skill - 创建Basic Skill Pack卡牌", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("overlap - 创建重叠卡牌测试层级管理", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("log on - 开启日志输出", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("log off - 关闭日志输出", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("help - 显示此帮助信息", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("========================", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("当前日志状态: " + ("开启" if GlobalUtil.is_log_enabled() else "关闭"), GlobalUtil.LogLevel.INFO)
+
+# 创建特定类型卡牌的方法
+func create_specific_card(card_type: String):
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
+	
+	# 设置卡牌位置（屏幕中央）
+	var target_position = GlobalConstants.SCREEN_CENTER
+	
+	# 使用卡牌池创建指定类型的卡牌
+	var card_instance = CardUtil.create_card_from_pool(root_node, card_type, target_position)
+	
+	# 设置卡牌名称
+	card_count += 1
+	var type_name = ""
+	match card_type:
+		"want_slime":
+			type_name = "Want Slime"
+		"basic_skill_pack":
+			type_name = "Basic Skill Pack"
+		"strike":
+			type_name = "打击"
+		"defend":
+			type_name = "防御"
+		_:
+			type_name = "未知"
+	card_instance.card_name = type_name + " #" + str(card_count)
+	
+	# 更新显示
+	card_instance.update_display()
+	
+	# 打印创建信息
+	GlobalUtil.log("创建了一张" + type_name + "卡牌！", GlobalUtil.LogLevel.INFO)
 
 # 创建重叠卡牌测试的方法
 func create_overlapping_cards_test():

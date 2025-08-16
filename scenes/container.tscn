@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3 uid="uid://bvqxk8y2qwqxr"]
+
+[ext_resource type="Texture2D" uid="uid://bfxvwa2n8qtxs" path="res://assets/images/frame.jpg" id="1_0hdqc"]
+[ext_resource type="Script" path="res://scripts/container/container.gd" id="2_1hdqc"]
+
+[node name="Container" type="Node2D"]
+script = ExtResource("2_1hdqc")
+
+[node name="Background" type="TextureRect" parent="."]
+texture = ExtResource("1_0hdqc")
+position = Vector2(-200, -150)
+size = Vector2(400, 300)
+stretch_mode = 1
+
+
+[node name="Label" type="Label" parent="."]
+position = Vector2(-100, -24)
+size = Vector2(200, 48)
+text = "通用容器"
+horizontal_alignment = 1
+vertical_alignment = 1

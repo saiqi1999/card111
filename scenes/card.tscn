@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://dqvnpq8cqvhx8"]
+[gd_scene load_steps=4 format=3 uid="uid://dqvnpq8cqvhx8"]
 
 [ext_resource type="Script" uid="uid://c3408fps2d6bj" path="res://scripts/cards/card_util.gd" id="1_ixvnl"]
 
@@ -11,6 +11,9 @@ corner_radius_top_left = 10
 corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_click"]
+size = Vector2(200, 300)
 
 [node name="Card" type="Node2D"]
 script = ExtResource("1_ixvnl")
@@ -42,3 +45,8 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 max_lines_visible = 4
+
+[node name="ClickArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ClickArea"]
+shape = SubResource("RectangleShape2D_click")
