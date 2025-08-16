@@ -142,18 +142,34 @@ CardUtil.cleanup_invalid_cards()  # 清理失效的卡牌引用
 
 #### 卡牌尺寸
 
-卡牌现在使用固定尺寸，不再由图片大小决定：
+卡牌现在使用固定尺寸，不再由图片大小决定。所有尺寸常量都通过`GlobalConstants`类统一管理：
 
-- 卡牌宽度：200像素
-- 卡牌高度：300像素
+- 卡牌宽度：200像素（`GlobalConstants.CARD_WIDTH`）
+- 卡牌高度：300像素（`GlobalConstants.CARD_HEIGHT`）
 
 卡牌图像会自动缩放以适应这个固定尺寸，同时保持图像的原始宽高比。卡牌背景是一个带有圆角和边框的面板，确保所有卡牌具有一致的外观。
 
 ```gdscript
-# 卡牌固定尺寸常量
-const CARD_WIDTH: float = 200.0  # 卡牌宽度
-const CARD_HEIGHT: float = 300.0  # 卡牌高度
+# 卡牌固定尺寸（使用全局常量）
+const CARD_WIDTH: float = GlobalConstants.CARD_WIDTH  # 卡牌宽度
+const CARD_HEIGHT: float = GlobalConstants.CARD_HEIGHT  # 卡牌高度
 ```
+
+#### 全局常量系统集成
+
+卡牌系统已完全集成全局常量系统，所有硬编码的数值都已替换为`GlobalConstants`中的常量：
+
+- **卡牌尺寸**：`CARD_WIDTH`、`CARD_HEIGHT`
+- **透明度设置**：`CARD_DRAG_ALPHA`（拖拽时）、`CARD_NORMAL_ALPHA`（正常状态）
+- **动画时长**：`DEFAULT_MOVE_DURATION`（默认移动）、`SLIDE_DURATION`（滑动动画）
+- **随机移动**：`RANDOM_MOVE_RANGE`（移动范围）、`CENTER_AVOID_RANGE`（中心避让）
+- **卡牌池配置**：`CARD_POOL_SIZE`（池大小）、`CARD_POOL_HIDDEN_POSITION`（隐藏位置）
+
+这种设计提供了以下优势：
+- 统一的配置管理
+- 类型安全的常量定义
+- 易于维护和修改
+- 避免硬编码错误
 
 ## 扩展说明
 

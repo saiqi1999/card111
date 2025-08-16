@@ -1,6 +1,6 @@
 # 全局工具系统
 
-本目录包含游戏中使用的全局工具类和加载器。
+本目录包含游戏中使用的全局工具类和加载器，提供日志管理、通用工具方法和全局常量配置。
 
 ## 文件说明
 
@@ -21,9 +21,38 @@
 - `calculate_distance(point1, point2)`: 计算两点之间的距离
 - `format_time(seconds)`: 将秒数格式化为分:秒格式
 
+### global_constants.gd
+
+全局常量类，定义了游戏中使用的所有常量配置：
+
+#### 卡牌池相关常量
+- `CARD_POOL_SIZE`: 卡牌池大小（默认5）
+- `CARD_POOL_HIDDEN_POSITION`: 卡牌池隐藏位置
+
+#### 卡牌尺寸和透明度常量
+- `CARD_WIDTH`: 卡牌宽度（200像素）
+- `CARD_HEIGHT`: 卡牌高度（300像素）
+- `CARD_DRAG_ALPHA`: 拖拽时的透明度（0.5）
+- `CARD_NORMAL_ALPHA`: 卡牌正常透明度（1.0）
+
+#### 动画相关常量
+- `DEFAULT_MOVE_DURATION`: 默认移动动画时长（1.0秒）
+- `SLIDE_DURATION`: 滑动动画时长（2.0秒）
+
+#### 随机移动相关常量
+- `RANDOM_MOVE_RANGE`: 随机移动范围（200像素）
+- `CENTER_AVOID_RANGE`: 中心避让范围（50像素）
+
+#### 屏幕位置常量
+- `SCREEN_CENTER`: 屏幕中心位置（960, 540）
+- `SCREEN_LEFT_OUTSIDE`: 屏幕左侧外部位置（-200, 540）
+
+#### 日志配置常量
+- `DEFAULT_LOG_ENABLED`: 默认日志开关状态（true）
+
 ### global_util_loader.gd
 
-`global_util_loader.gd` 是全局工具加载器，负责初始化全局工具实例并将其注册为自动加载单例。
+`global_util_loader.gd` 是全局工具加载器，负责初始化全局工具实例和全局常量，并将其注册为自动加载单例。
 
 ## 使用方法
 

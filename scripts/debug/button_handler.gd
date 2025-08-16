@@ -29,7 +29,7 @@ func _on_button_pressed():
 	
 	# 创建三张不同位置的卡牌
 	create_card(Vector2(700, 540))
-	create_card(Vector2(960, 540))
+	create_card(GlobalConstants.SCREEN_CENTER)
 	create_card(Vector2(1220, 540))
 	
 	# 打印创建成功信息
@@ -164,7 +164,7 @@ func create_sliding_card():
 	CardUtil.initialize_card_pool(root_node)
 	
 	# 设置卡牌初始位置（屏幕左侧外）
-	var start_position = Vector2(-200, 540)
+	var start_position = GlobalConstants.SCREEN_LEFT_OUTSIDE
 	
 	# 使用卡牌池创建卡牌
 	var card_instance = CardUtil.create_card_from_pool(root_node, "strike", start_position)
@@ -186,11 +186,11 @@ func create_sliding_card():
 		card_instance.set("active_tween", tween)
 	
 	# 设置卡牌移动动画（从左到右）
-	tween.tween_property(card_instance, "position", Vector2(960, 540), 1.5)
+	tween.tween_property(card_instance, "position", GlobalConstants.SCREEN_CENTER, 1.5)
 	
 	# 添加第二段动画（轻微上下浮动）
-	tween.tween_property(card_instance, "position", Vector2(960, 520), 0.5)
-	tween.tween_property(card_instance, "position", Vector2(960, 540), 0.5)
+	tween.tween_property(card_instance, "position", Vector2(GlobalConstants.SCREEN_CENTER.x, GlobalConstants.SCREEN_CENTER.y - 20), 0.5)
+	tween.tween_property(card_instance, "position", GlobalConstants.SCREEN_CENTER, 0.5)
 	
 	# 动画完成后清除引用
 	tween.finished.connect(func(): 
@@ -207,7 +207,7 @@ func create_random_move_card():
 	CardUtil.initialize_card_pool(root_node)
 	
 	# 设置卡牌初始位置（屏幕中央）
-	var start_position = Vector2(960, 540)
+	var start_position = GlobalConstants.SCREEN_CENTER
 	
 	# 使用卡牌池创建卡牌
 	var card_instance = CardUtil.create_card_from_pool(root_node, "strike", start_position)
@@ -232,7 +232,7 @@ func create_random_type_card():
 	CardUtil.initialize_card_pool(root_node)
 	
 	# 设置卡牌初始位置（屏幕中央）
-	var start_position = Vector2(960, 540)
+	var start_position = GlobalConstants.SCREEN_CENTER
 	
 	# 定义可用的卡牌类型
 	var card_types = ["strike", "defend"]
@@ -276,7 +276,7 @@ func show_help():
 # 创建重叠卡牌测试的方法
 func create_overlapping_cards_test():
 	# 在同一位置创建多张卡牌，测试层级管理
-	var base_position = Vector2(960, 540)
+	var base_position = GlobalConstants.SCREEN_CENTER
 	
 	# 确保卡牌池已初始化
 	CardUtil.initialize_card_pool(root_node)

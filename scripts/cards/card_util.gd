@@ -3,9 +3,9 @@ extends Node2D
 # 卡牌工具组件
 # 用于显示卡牌的视觉表现和提供卡牌相关工具函数
 
-# 卡牌固定尺寸
-const CARD_WIDTH: float = 200.0  # 卡牌宽度
-const CARD_HEIGHT: float = 300.0  # 卡牌高度
+# 卡牌固定尺寸（使用全局常量）
+const CARD_WIDTH: float = GlobalConstants.CARD_WIDTH  # 卡牌宽度
+const CARD_HEIGHT: float = GlobalConstants.CARD_HEIGHT  # 卡牌高度
 
 # 卡牌属性
 var card_name: String = "未命名卡牌"
@@ -27,11 +27,11 @@ static var card_layer_counter: int = 0  # 全局层级计数器
 var card_layer: int = 0  # 当前卡牌的层级
 static var all_cards: Array[Node2D] = []  # 所有卡牌实例的引用
 
-# 卡牌池系统
+# 卡牌池系统（使用全局常量）
 static var card_pool: Array[Node2D] = []  # 预加载的卡牌池
-static var pool_size: int = 5  # 卡牌池大小
+static var pool_size: int = GlobalConstants.CARD_POOL_SIZE  # 卡牌池大小
 static var is_pool_initialized: bool = false  # 卡牌池是否已初始化
-static var hidden_position: Vector2 = Vector2(-1000, -1000)  # 隐藏位置
+static var hidden_position: Vector2 = GlobalConstants.CARD_POOL_HIDDEN_POSITION  # 隐藏位置
 
 # 节点引用
 @onready var sprite = $Sprite2D
@@ -265,7 +265,7 @@ static func create_card_from_pool(root_node: Node, type_name: String, target_pos
 	return card
 
 # 移动卡牌到指定位置
-static func move_card(card_instance: Node2D, target_position: Vector2, duration: float = 1.0):
+static func move_card(card_instance: Node2D, target_position: Vector2, duration: float = GlobalConstants.DEFAULT_MOVE_DURATION):
 	# 停止之前的Tween动画（如果存在）
 	if card_instance.has_method("get") and card_instance.get("active_tween") != null:
 		var old_tween = card_instance.get("active_tween")
@@ -294,29 +294,29 @@ static func move_card(card_instance: Node2D, target_position: Vector2, duration:
 
 # 随机移动卡牌到非中心区域
 static func random_move_card(card_instance: Node2D):
-	# 生成随机的x坐标（-200到200范围内，但不在-50到50范围内）
+	# 生成随机的x坐标（使用全局常量定义的范围，但不在中心避让范围内）
 	var random_x: float = 0.0
 	if randf() < 0.5:
-		# 生成-200到-50的随机数
-		random_x = randf_range(-200, -50)
+		# 生成负方向的随机数
+		random_x = randf_range(-GlobalConstants.RANDOM_MOVE_RANGE, -GlobalConstants.CENTER_AVOID_RANGE)
 	else:
-		# 生成50到200的随机数
-		random_x = randf_range(50, 200)
+		# 生成正方向的随机数
+		random_x = randf_range(GlobalConstants.CENTER_AVOID_RANGE, GlobalConstants.RANDOM_MOVE_RANGE)
 	
-	# 生成随机的y坐标（-200到200范围内，但不在-50到50范围内）
+	# 生成随机的y坐标（使用全局常量定义的范围，但不在中心避让范围内）
 	var random_y: float = 0.0
 	if randf() < 0.5:
-		# 生成-200到-50的随机数
-		random_y = randf_range(-200, -50)
+		# 生成负方向的随机数
+		random_y = randf_range(-GlobalConstants.RANDOM_MOVE_RANGE, -GlobalConstants.CENTER_AVOID_RANGE)
 	else:
-		# 生成50到200的随机数
-		random_y = randf_range(50, 200)
+		# 生成正方向的随机数
+		random_y = randf_range(GlobalConstants.CENTER_AVOID_RANGE, GlobalConstants.RANDOM_MOVE_RANGE)
 	
 	# 计算目标位置（相对当前位置）
 	var target_position = card_instance.position + Vector2(random_x, random_y)
 	
 	# 调用move_card方法移动卡牌
-	move_card(card_instance, target_position, 1.0)
+	move_card(card_instance, target_position, GlobalConstants.DEFAULT_MOVE_DURATION)
 	
 	# 返回移动的距离向量
 	return Vector2(random_x, random_y)
@@ -427,7 +427,7 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 			# 开始拖拽
 			is_dragging = true
 			drag_offset = global_position - get_global_mouse_position()
-			modulate.a = 0.8  # 拖拽时半透明效果
+			modulate.a = GlobalConstants.CARD_DRAG_ALPHA  # 拖拽时半透明效果
 			GlobalUtil.log("开始拖拽卡牌，偏移量:" + str(drag_offset), GlobalUtil.LogLevel.DEBUG)
 
 # 全局输入处理，用于处理拖拽时的鼠标释放事件
@@ -440,7 +440,7 @@ func _input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		# 结束拖拽
 		is_dragging = false
-		modulate.a = 1.0  # 恢复透明度
+		modulate.a = GlobalConstants.CARD_NORMAL_ALPHA  # 恢复透明度
 		GlobalUtil.log("卡牌拖拽结束，最终位置:" + str(global_position), GlobalUtil.LogLevel.DEBUG)
 
 # 每帧更新，用于处理拖拽时的位置跟随
@@ -536,7 +536,7 @@ static func return_card_to_pool(card: Node2D):
 	card.card_pack = null
 	card.on_click = Callable()  # 重置点击效果
 	card.is_dragging = false
-	card.modulate.a = 1.0
+	card.modulate.a = GlobalConstants.CARD_NORMAL_ALPHA
 	
 	# 停止所有动画
 	if card.active_tween != null and card.active_tween.is_valid():

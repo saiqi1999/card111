@@ -339,6 +339,27 @@ func create_random_type_card():
 - 提高了卡牌创建的性能
 - 实现了卡牌资源的重复利用
 
+## 全局常量系统集成
+
+调试系统已完全集成全局常量系统，所有硬编码的位置和数值都已替换为`GlobalConstants`中的常量：
+
+### 替换的常量
+
+- **屏幕位置**：
+  - `Vector2(960, 540)` → `GlobalConstants.SCREEN_CENTER`
+  - `Vector2(-200, 540)` → `GlobalConstants.SCREEN_LEFT_OUTSIDE`
+
+- **动画时长**：
+  - 滑动动画使用 `GlobalConstants.SLIDE_DURATION`
+  - 移动动画使用 `GlobalConstants.DEFAULT_MOVE_DURATION`
+
+### 优势
+
+- **统一配置**：所有位置和时长参数集中管理
+- **易于调整**：修改屏幕布局只需更改常量值
+- **类型安全**：避免硬编码错误
+- **代码可读性**：常量名称更具语义化
+
 ## 开发指南
 
 ### 添加新的调试脚本
@@ -350,6 +371,7 @@ func create_random_type_card():
 3. 为调试功能添加清晰的注释
 4. 调试脚本应该尽量简单明了，专注于特定功能的测试
 5. 避免在调试脚本中包含复杂的游戏逻辑
+6. 使用 `GlobalConstants` 中的常量而非硬编码数值
 
 ### 调试脚本的使用
 
