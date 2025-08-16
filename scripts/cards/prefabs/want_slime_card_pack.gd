@@ -18,12 +18,12 @@ func _init():
 # Want Slime卡牌的点击特效：召唤史莱姆
 # 参数: card_instance - 触发点击的卡牌实例
 func want_slime_click_effect(card_instance):
-	# 获取容器类的引用
-	var container_class = preload("res://scripts/container/container.gd")
+	# 获取容器工具类的引用（用于静态方法调用）
+	var container_util_class = preload("res://scripts/container/container_util.gd")
 	
 	# 如果已经存在容器，先移除（确保场上只能存在一个容器）
-	if container_class.has_container():
-		container_class.remove_current_container()
+	if container_util_class.has_container():
+		container_util_class.remove_current_container()
 		# 等待一帧确保容器完全移除
 		await card_instance.get_tree().process_frame
 	
@@ -31,9 +31,11 @@ func want_slime_click_effect(card_instance):
 	var card_position = card_instance.global_position
 	GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " 卡牌位置: " + str(card_position), GlobalUtil.LogLevel.INFO)
 	
-	# 加载容器场景
-	var container_scene = preload("res://scenes/container.tscn")
-	var container_instance = container_scene.instantiate()
+	# 创建容器实例
+	var container_instance = preload("res://scripts/container/container_util.gd").new()
+	
+	# 从容器类型加载容器数据
+	container_instance.load_from_container_type("400x300")
 	
 	# 设置容器位置（在卡牌左侧，向左移动一个卡牌宽度）
 	var container_position = Vector2(card_position.x - 220 - GlobalConstants.CARD_WIDTH, card_position.y)
