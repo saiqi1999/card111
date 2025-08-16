@@ -11,6 +11,7 @@ const CARD_HEIGHT: float = 300.0  # 卡牌高度
 var card_name: String = "未命名卡牌"
 var description: String = "无描述"
 var card_image: Texture2D = null
+var on_click: Callable = Callable()  # 卡牌点击时的个性化效果
 
 # 卡包引用
 var card_pack: CardPackBase = null
@@ -25,6 +26,12 @@ var active_tween: Tween = null
 static var card_layer_counter: int = 0  # 全局层级计数器
 var card_layer: int = 0  # 当前卡牌的层级
 static var all_cards: Array[Node2D] = []  # 所有卡牌实例的引用
+
+# 卡牌池系统
+static var card_pool: Array[Node2D] = []  # 预加载的卡牌池
+static var pool_size: int = 5  # 卡牌池大小
+static var is_pool_initialized: bool = false  # 卡牌池是否已初始化
+static var hidden_position: Vector2 = Vector2(-1000, -1000)  # 隐藏位置
 
 # 节点引用
 @onready var sprite = $Sprite2D
@@ -149,11 +156,12 @@ func _exit_tree():
 	unregister_card()
 
 # 设置卡牌数据
-func set_card_data(p_name: String, p_description: String, p_image: Texture2D = null):
+func set_card_data(p_name: String, p_description: String, p_image: Texture2D = null, p_on_click: Callable = Callable()):
 	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 set_card_data() 函数，卡牌名称: " + p_name, GlobalUtil.LogLevel.DEBUG)
 	card_name = p_name
 	description = p_description
 	card_image = p_image
+	on_click = p_on_click
 	
 	# 如果已经准备好了，立即更新显示
 	if is_inside_tree():
@@ -202,8 +210,8 @@ func load_from_card_pack(p_card_pack):
 		# 从卡包获取数据
 		var card_data = card_pack.get_card_data()
 		
-		# 设置卡牌数据
-		set_card_data(card_data.name, card_data.description, card_data.image)
+		# 设置卡牌数据，包括点击效果
+		set_card_data(card_data.name, card_data.description, card_data.image, card_data.on_click)
 		return true
 	return false
 
@@ -218,18 +226,43 @@ func load_from_card_type(type_name: String):
 
 # 通过类型字符串获取卡包实例
 static func get_card_pack_by_type(type_name: String) -> CardPackBase:
-	# 根据类型字符串创建对应的卡包实例
+	# 根据类型字符串动态加载对应的卡包实例
 	var pack: CardPackBase = null
 	
-	match type_name.to_lower():
-		"strike":
-			# 创建打击卡包实例
-			pack = load("res://scripts/cards/strike_card_pack.gd").new()
-		_:
-			# 默认创建基础卡包
+	# 构建卡包文件路径
+	var pack_path = "res://scripts/cards/prefabs/" + type_name.to_lower() + "_card_pack.gd"
+	
+	# 检查文件是否存在
+	if ResourceLoader.exists(pack_path):
+		# 尝试加载并创建卡包实例
+		var pack_script = load(pack_path)
+		if pack_script != null:
+			pack = pack_script.new()
+			GlobalUtil.log("成功加载卡包类型: " + type_name + ", 路径: " + pack_path, GlobalUtil.LogLevel.INFO)
+		else:
+			# 加载失败时的错误处理
+			GlobalUtil.log("加载卡包失败: " + type_name + ", 路径: " + pack_path + ", 使用默认卡包", GlobalUtil.LogLevel.ERROR)
 			pack = CardPackBase.new()
+	else:
+		# 文件不存在时的处理
+		GlobalUtil.log("卡包文件不存在: " + pack_path + ", 使用默认卡包", GlobalUtil.LogLevel.WARNING)
+		pack = CardPackBase.new()
 	
 	return pack
+
+# 使用卡牌池创建卡牌（推荐使用）
+static func create_card_from_pool(root_node: Node, type_name: String, target_position: Vector2) -> Node2D:
+	# 从卡牌池获取卡牌
+	var card = get_card_from_pool(root_node)
+	
+	# 加载卡牌数据
+	card.load_from_card_type(type_name)
+	
+	# 瞬移到目标位置
+	goto_card(card, target_position)
+	
+	GlobalUtil.log("使用卡牌池创建卡牌: " + type_name + " 位置: " + str(target_position), GlobalUtil.LogLevel.DEBUG)
+	return card
 
 # 移动卡牌到指定位置
 static func move_card(card_instance: Node2D, target_position: Vector2, duration: float = 1.0):
@@ -374,6 +407,11 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 				GlobalUtil.log("卡牌不是最上层，忽略点击事件", GlobalUtil.LogLevel.DEBUG)
 				return
 			
+			# 触发卡牌的个性化点击效果
+			if on_click.is_valid():
+				GlobalUtil.log("触发卡牌点击效果", GlobalUtil.LogLevel.DEBUG)
+				on_click.call(self)
+			
 			# 打印卡牌信息
 			print_card_info()
 			
@@ -390,15 +428,25 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 			is_dragging = true
 			drag_offset = global_position - get_global_mouse_position()
 			modulate.a = 0.8  # 拖拽时半透明效果
-		else:
-			# 鼠标释放，结束拖拽
-			is_dragging = false
-			modulate.a = 1.0  # 恢复透明度
-			GlobalUtil.log("卡牌拖拽结束，最终位置:" + str(global_position), GlobalUtil.LogLevel.DEBUG)
-	
-	# 处理鼠标移动事件（用于拖拽）
-	elif event is InputEventMouseMotion and is_dragging:
-		# 更新卡牌位置跟随鼠标
+			GlobalUtil.log("开始拖拽卡牌，偏移量:" + str(drag_offset), GlobalUtil.LogLevel.DEBUG)
+
+# 全局输入处理，用于处理拖拽时的鼠标释放事件
+func _input(event):
+	# 只有在拖拽状态下才处理全局输入
+	if not is_dragging:
+		return
+		
+	# 处理鼠标释放事件
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		# 结束拖拽
+		is_dragging = false
+		modulate.a = 1.0  # 恢复透明度
+		GlobalUtil.log("卡牌拖拽结束，最终位置:" + str(global_position), GlobalUtil.LogLevel.DEBUG)
+
+# 每帧更新，用于处理拖拽时的位置跟随
+func _process(_delta):
+	# 如果正在拖拽，更新卡牌位置跟随鼠标
+	if is_dragging:
 		global_position = get_global_mouse_position() + drag_offset
 
 # 鼠标进入事件（调试用）
@@ -424,3 +472,111 @@ func print_card_info():
 	
 	# 打印所有卡牌的调试信息
 	GlobalUtil.log(get_all_cards_debug_info(), GlobalUtil.LogLevel.INFO)
+
+# ==================== 卡牌池管理系统 ====================
+
+# 初始化卡牌池
+static func initialize_card_pool(root_node: Node):
+	if is_pool_initialized:
+		return
+	
+	GlobalUtil.log("开始初始化卡牌池，大小: " + str(pool_size), GlobalUtil.LogLevel.INFO)
+	
+	# 加载卡牌场景
+	var card_scene = preload("res://scenes/card.tscn")
+	
+	# 创建预加载的卡牌
+	for i in range(pool_size):
+		var card_instance = card_scene.instantiate()
+		
+		# 设置隐藏位置
+		card_instance.position = hidden_position
+		
+		# 添加到场景树但隐藏
+		root_node.add_child(card_instance)
+		
+		# 添加到卡牌池
+		card_pool.append(card_instance)
+		
+		GlobalUtil.log("预加载卡牌 #" + str(i + 1) + " 完成", GlobalUtil.LogLevel.DEBUG)
+	
+	is_pool_initialized = true
+	GlobalUtil.log("卡牌池初始化完成，共预加载 " + str(card_pool.size()) + " 张卡牌", GlobalUtil.LogLevel.INFO)
+
+# 从卡牌池获取一张卡牌
+static func get_card_from_pool(root_node: Node) -> Node2D:
+	# 确保卡牌池已初始化
+	if not is_pool_initialized:
+		initialize_card_pool(root_node)
+	
+	# 如果池中有可用卡牌，直接返回
+	if card_pool.size() > 0:
+		var card = card_pool.pop_front()
+		GlobalUtil.log("从卡牌池获取卡牌，剩余: " + str(card_pool.size()), GlobalUtil.LogLevel.DEBUG)
+		return card
+	
+	# 如果池为空，创建新卡牌
+	GlobalUtil.log("卡牌池为空，创建新卡牌", GlobalUtil.LogLevel.DEBUG)
+	var card_scene = preload("res://scenes/card.tscn")
+	var card_instance = card_scene.instantiate()
+	card_instance.position = hidden_position
+	root_node.add_child(card_instance)
+	return card_instance
+
+# 将卡牌返回到池中
+static func return_card_to_pool(card: Node2D):
+	if card == null or not is_instance_valid(card):
+		return
+	
+	# 重置卡牌状态
+	card.position = hidden_position
+	card.card_name = "未命名卡牌"
+	card.description = "无描述"
+	card.card_image = null
+	card.card_pack = null
+	card.on_click = Callable()  # 重置点击效果
+	card.is_dragging = false
+	card.modulate.a = 1.0
+	
+	# 停止所有动画
+	if card.active_tween != null and card.active_tween.is_valid():
+		card.active_tween.kill()
+		card.active_tween = null
+	
+	# 更新显示
+	if card.has_method("update_display"):
+		card.update_display()
+	
+	# 返回到池中
+	card_pool.append(card)
+	GlobalUtil.log("卡牌已返回池中，池大小: " + str(card_pool.size()), GlobalUtil.LogLevel.DEBUG)
+
+# 瞬移卡牌到目标位置
+static func goto_card(card: Node2D, target_position: Vector2):
+	if card == null or not is_instance_valid(card):
+		GlobalUtil.log("goto_card: 无效的卡牌实例", GlobalUtil.LogLevel.ERROR)
+		return
+	
+	# 停止当前动画
+	if card.active_tween != null and card.active_tween.is_valid():
+		card.active_tween.kill()
+		card.active_tween = null
+	
+	# 瞬移到目标位置
+	card.position = target_position
+	
+	# 将卡牌移到最上层
+	if card.has_method("bring_to_front"):
+		card.bring_to_front()
+	
+	GlobalUtil.log("卡牌瞬移到位置: " + str(target_position), GlobalUtil.LogLevel.DEBUG)
+
+# 获取卡牌池状态信息
+static func get_card_pool_info() -> String:
+	var info = "=== 卡牌池状态 ===\n"
+	info += "池大小: " + str(pool_size) + "\n"
+	info += "已初始化: " + str(is_pool_initialized) + "\n"
+	info += "可用卡牌: " + str(card_pool.size()) + "\n"
+	info += "隐藏位置: " + str(hidden_position) + "\n"
+	info += "================\n"
+	return info

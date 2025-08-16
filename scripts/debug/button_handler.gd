@@ -37,21 +37,18 @@ func _on_button_pressed():
 
 # 创建卡牌的辅助函数
 func create_card(position: Vector2):
-	# 创建卡牌场景实例
-	var card_instance = card_scene.instantiate()
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
 	
-	# 设置卡牌位置
-	card_instance.position = position
-	
-	# 通过类型字符串加载卡牌
-	card_instance.load_from_card_type("strike")
+	# 使用卡牌池创建卡牌
+	var card_instance = CardUtil.create_card_from_pool(root_node, "strike", position)
 	
 	# 设置卡牌名称，使其区分
 	card_count += 1
 	card_instance.card_name = "打击 #" + str(card_count)
 	
-	# 将卡牌添加到根场景
-	root_node.add_child(card_instance)
+	# 更新显示
+	card_instance.update_display()
 
 # 处理输入框文本提交事件
 func _on_input_field_text_submitted(text: String):
@@ -89,6 +86,15 @@ func _on_input_field_text_submitted(text: String):
 		
 		# 调用随机移动卡牌方法
 		create_random_move_card()
+		
+		# 清空输入框
+		input_field.text = ""
+	elif text.to_lower() == "random2":
+		# 打印随机卡牌类型信息
+		GlobalUtil.log("创建随机类型卡牌...", GlobalUtil.LogLevel.INFO)
+		
+		# 调用随机类型卡牌方法
+		create_random_type_card()
 		
 		# 清空输入框
 		input_field.text = ""
@@ -154,21 +160,21 @@ func reboot_root_node():
 
 # 创建滑动卡牌的方法
 func create_sliding_card():
-	# 创建卡牌场景实例
-	var card_instance = card_scene.instantiate()
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
 	
 	# 设置卡牌初始位置（屏幕左侧外）
-	card_instance.position = Vector2(-200, 540)
+	var start_position = Vector2(-200, 540)
 	
-	# 通过类型字符串加载卡牌
-	card_instance.load_from_card_type("strike")
+	# 使用卡牌池创建卡牌
+	var card_instance = CardUtil.create_card_from_pool(root_node, "strike", start_position)
 	
 	# 设置卡牌名称
 	card_count += 1
 	card_instance.card_name = "滑动打击 #" + str(card_count)
 	
-	# 将卡牌添加到根场景
-	root_node.add_child(card_instance)
+	# 更新显示
+	card_instance.update_display()
 	
 	# 创建Tween动画
 	var tween = create_tween()
@@ -197,21 +203,21 @@ func create_sliding_card():
 
 # 创建随机移动卡牌的方法
 func create_random_move_card():
-	# 创建卡牌场景实例
-	var card_instance = card_scene.instantiate()
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
 	
 	# 设置卡牌初始位置（屏幕中央）
-	card_instance.position = Vector2(960, 540)
+	var start_position = Vector2(960, 540)
 	
-	# 通过类型字符串加载卡牌
-	card_instance.load_from_card_type("strike")
+	# 使用卡牌池创建卡牌
+	var card_instance = CardUtil.create_card_from_pool(root_node, "strike", start_position)
 	
 	# 设置卡牌名称
 	card_count += 1
 	card_instance.card_name = "随机移动打击 #" + str(card_count)
 	
-	# 将卡牌添加到根场景
-	root_node.add_child(card_instance)
+	# 更新显示
+	card_instance.update_display()
 	
 	# 使用CardUtil.random_move_card方法随机移动卡牌
 	var move_distance = CardUtil.random_move_card(card_instance)
@@ -220,13 +226,46 @@ func create_random_move_card():
 	GlobalUtil.log("创建了一张随机移动的打击卡牌！", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("卡牌移动了：" + str(move_distance), GlobalUtil.LogLevel.INFO)
 
+# 创建随机类型卡牌的方法
+func create_random_type_card():
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
+	
+	# 设置卡牌初始位置（屏幕中央）
+	var start_position = Vector2(960, 540)
+	
+	# 定义可用的卡牌类型
+	var card_types = ["strike", "defend"]
+	
+	# 随机选择卡牌类型
+	var random_type = card_types[randi() % card_types.size()]
+	
+	# 使用卡牌池创建随机类型的卡牌
+	var card_instance = CardUtil.create_card_from_pool(root_node, random_type, start_position)
+	
+	# 设置卡牌名称
+	card_count += 1
+	var type_name = "打击" if random_type == "strike" else "防御"
+	card_instance.card_name = "随机" + type_name + " #" + str(card_count)
+	
+	# 更新显示
+	card_instance.update_display()
+	
+	# 使用CardUtil.random_move_card方法随机移动卡牌
+	var move_distance = CardUtil.random_move_card(card_instance)
+	
+	# 打印创建和移动信息
+	GlobalUtil.log("创建了一张随机移动的" + type_name + "卡牌！类型：" + random_type, GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("卡牌移动了：" + str(move_distance), GlobalUtil.LogLevel.INFO)
+
 # 显示帮助信息的方法
 func show_help():
 	GlobalUtil.log("===== 可用命令列表 =====", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("hello - 显示问候信息", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("reboot - 重启root节点，清除所有卡牌", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("slide - 创建滑动卡牌", GlobalUtil.LogLevel.INFO)
-	GlobalUtil.log("random - 创建随机移动卡牌", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("random - 创建随机移动打击卡牌", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("random2 - 创建随机移动的打击或防御卡牌", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("overlap - 创建重叠卡牌测试层级管理", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("log on - 开启日志输出", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("log off - 关闭日志输出", GlobalUtil.LogLevel.INFO)
@@ -239,27 +278,26 @@ func create_overlapping_cards_test():
 	# 在同一位置创建多张卡牌，测试层级管理
 	var base_position = Vector2(960, 540)
 	
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
+	
 	# 创建5张重叠的卡牌
 	for i in range(5):
-		# 创建卡牌场景实例
-		var card_instance = card_scene.instantiate()
-		
-		# 设置卡牌位置（稍微偏移以便观察层级）
+		# 计算卡牌位置（稍微偏移以便观察层级）
 		var offset = Vector2(i * 20, i * 15)  # 每张卡牌稍微偏移
-		card_instance.position = base_position + offset
+		var target_position = base_position + offset
 		
-		# 通过类型字符串加载卡牌
-		card_instance.load_from_card_type("strike")
+		# 使用卡牌池创建卡牌
+		var card_instance = CardUtil.create_card_from_pool(root_node, "strike", target_position)
 		
 		# 设置卡牌名称
 		card_count += 1
 		card_instance.card_name = "重叠测试卡牌 #" + str(card_count)
 		
-		# 将卡牌添加到根场景
-		root_node.add_child(card_instance)
+		# 更新显示
+		card_instance.update_display()
 		
-		# 等待一小段时间，确保层级正确分配
-		await get_tree().process_frame
+		GlobalUtil.log("创建重叠测试卡牌 #" + str(card_count) + " 完成", GlobalUtil.LogLevel.DEBUG)
 	
 	# 打印创建信息
 	GlobalUtil.log("创建了5张重叠的测试卡牌！", GlobalUtil.LogLevel.INFO)

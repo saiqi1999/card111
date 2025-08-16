@@ -5,14 +5,15 @@
 ## 文件结构
 
 - `card_pack_base.gd` - 卡包基类，定义了卡包的基本属性和方法
-- `strike_card_pack.gd` - 打击卡包类，继承自卡包基类，使用strike.png作为图片
+- `prefabs/` - 卡包预制体文件夹
+  - `strike_card_pack.gd` - 打击卡包类，继承自卡包基类，使用strike.png作为图片
 - `card_util.gd` - 卡牌工具脚本，用于显示卡牌的视觉表现和提供卡牌相关工具函数
 
 ## 使用说明
 
 ### 卡包基类 (CardPackBase)
 
-卡包基类提供了卡牌数据管理功能：
+卡包基类提供了卡牌数据管理功能，包括卡牌名称、描述、图像和个性化点击效果：
 
 ```gdscript
 # 创建基础卡包
@@ -21,35 +22,57 @@ var basic_pack = CardPackBase.new("基础卡包", "包含基础卡牌的卡包")
 # 设置卡牌数据
 basic_pack.set_card_data("卡牌名称", "卡牌描述")
 
-# 获取卡牌数据
+# 设置点击效果（可选）
+basic_pack.on_click = my_click_function
+
+# 获取卡牌数据（包含点击效果）
 var card_data = basic_pack.get_card_data()
+# card_data包含：name, description, image, on_click
 ```
 
 ### 打击卡包 (StrikeCardPack)
 
-打击卡包是卡包基类的一个具体实现，专门用于管理打击类型的卡牌：
+打击卡包是卡包基类的一个具体实现，专门用于管理打击类型的卡牌。它包含了打击卡牌的特殊点击效果：
 
 ```gdscript
-# 创建打击卡包
-var strike_pack = StrikeCardPack.new()
+# 推荐使用CardUtil获取打击卡包
+var strike_pack = CardUtil.get_card_pack_by_type("strike")
+# 打击卡包自动设置了点击特效：打印随机数（1-100）
 ```
+
+**打击卡牌特效**：当点击打击卡牌时，会触发`strike_click_effect()`函数，打印一个1-100之间的随机数。
+
+### 防御卡包 (DefendCardPack)
+
+防御卡包是卡包基类的一个具体实现，专门用于管理防御类型的卡牌。它包含了防御卡牌的特殊点击效果：
+
+```gdscript
+# 推荐使用CardUtil获取防御卡包
+var defend_pack = CardUtil.get_card_pack_by_type("defend")
+# 防御卡包自动设置了点击特效：显示获得的护甲值
+```
+
+**防御卡牌特效**：当点击防御卡牌时，会触发`defend_click_effect()`函数，显示获得5点护甲的效果。
 
 ### 卡牌工具 (CardUtil)
 
 卡牌工具脚本用于处理卡牌的视觉表现和提供卡牌相关工具函数，可以从卡包加载数据或通过类型字符串加载：
 
 ```gdscript
-# 获取卡牌场景实例
-var card_instance = preload("res://scenes/card.tscn").instantiate()
+# 推荐方法：使用卡牌池系统创建卡牌
+CardUtil.initialize_card_pool(root_node)  # 确保卡牌池已初始化
+var card_instance = CardUtil.create_card_from_pool(root_node, "strike", Vector2(960, 540))
+card_instance.card_name = "打击卡牌"
+card_instance.update_display()
 
-# 方法1：通过类型字符串加载卡牌（推荐）
-card_instance.load_from_card_type("strike")
+# 传统方法：直接实例化（不推荐，可能有拖拽延迟问题）
+var card_instance_old = preload("res://scenes/card.tscn").instantiate()
+card_instance_old.load_from_card_type("strike")
+root_node.add_child(card_instance_old)
 
-# 方法2：创建卡包实例并加载
+# 其他加载方式
 var card_pack = CardUtil.get_card_pack_by_type("strike")
 card_instance.load_from_card_pack(card_pack)
-
-# 方法3：直接设置卡牌数据
 card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 ```
 
@@ -57,7 +80,8 @@ card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 
 **拖拽功能**：卡牌支持鼠标拖拽，具有以下特性：
 - 鼠标左键按下开始拖拽，拖拽时卡牌半透明显示
-- 鼠标移动时卡牌跟随鼠标位置
+- 使用全局鼠标跟踪，无论鼠标移动多快都能精确跟随
+- 即使鼠标移出卡牌范围，拖拽状态仍然保持
 - 鼠标释放结束拖拽，恢复正常透明度
 - 拖拽开始时自动停止正在进行的Tween动画，避免冲突
 
@@ -67,6 +91,12 @@ card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 - 点击卡牌时自动将其置于最上层
 - 支持失效卡牌的自动清理
 - 每张卡牌都有唯一的层级标识
+
+**个性化点击效果**：每张卡牌支持自定义点击效果：
+- 通过卡包的`on_click`属性设置点击回调函数
+- 点击卡牌时自动触发对应的特效函数，并传递卡牌实例作为参数
+- 打击卡牌示例：点击时打印卡牌实例ID和1-100的随机数
+- 支持任意自定义的点击逻辑，可获取卡牌实例的完整信息
 
 **移动动画功能**：
 
@@ -92,6 +122,15 @@ print("卡牌移动了：", move_distance)
 ```gdscript
 # 通过类型字符串获取卡包实例
 var strike_pack = CardUtil.get_card_pack_by_type("strike")
+
+# 设置卡牌数据（包括点击效果）
+card_instance.set_card_data("卡牌名称", "卡牌描述", 图像资源, 点击回调函数)
+
+# 点击效果函数示例（接收卡牌实例作为参数）
+func custom_click_effect(card_instance):
+    print("卡牌实例ID:" + str(card_instance.get_instance_id()) + " 被点击了！")
+    # 可以访问卡牌的所有属性和方法
+    print("卡牌名称:" + card_instance.card_name)
 
 # 层级管理相关方法
 CardUtil.register_card(card_instance)  # 注册卡牌到层级管理系统

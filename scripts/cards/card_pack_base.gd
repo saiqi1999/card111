@@ -8,6 +8,7 @@ var description: String = "基础卡包描述"
 # 卡牌属性
 var card_name: String = "未命名卡牌"
 var card_description: String = "无描述"
+var on_click: Callable = Callable()  # 卡牌点击时的个性化效果
 
 # 卡包图片资源
 @export var pack_image: Texture2D = preload("res://assets/images/card_template.png")
@@ -31,5 +32,6 @@ func get_card_data() -> Dictionary:
 	return {
 		"name": card_name,
 		"description": card_description,
-		"image": pack_image
+		"image": pack_image,
+		"on_click": on_click
 	}
