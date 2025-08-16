@@ -148,12 +148,22 @@ func create_sliding_card():
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_QUART)
 	
+	# 保存Tween引用到卡牌实例，以便拖拽时能停止动画
+	if card_instance.has_method("set"):
+		card_instance.set("active_tween", tween)
+	
 	# 设置卡牌移动动画（从左到右）
 	tween.tween_property(card_instance, "position", Vector2(960, 540), 1.5)
 	
 	# 添加第二段动画（轻微上下浮动）
 	tween.tween_property(card_instance, "position", Vector2(960, 520), 0.5)
 	tween.tween_property(card_instance, "position", Vector2(960, 540), 0.5)
+	
+	# 动画完成后清除引用
+	tween.finished.connect(func(): 
+		if card_instance.has_method("set"):
+			card_instance.set("active_tween", null)
+	)
 	
 	# 打印创建信息
 	print("创建了一张从左向右滑动的打击卡牌！")

@@ -53,32 +53,39 @@ card_instance.load_from_card_pack(card_pack)
 card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 ```
 
-#### 点击检测功能
+#### 卡牌交互功能
 
-卡牌工具包含完整的点击检测系统：
+**拖拽功能**：卡牌支持鼠标拖拽，具有以下特性：
+- 鼠标左键按下开始拖拽，拖拽时卡牌半透明显示
+- 鼠标移动时卡牌跟随鼠标位置
+- 鼠标释放结束拖拽，恢复正常透明度
+- 拖拽开始时自动停止正在进行的Tween动画，避免冲突
 
-- **自动输入检测设置** - 在`_ready()`函数中自动调用`setup_input_detection()`
-- **Control节点处理** - 自动设置Panel、Label等Control节点的`mouse_filter`为`IGNORE`，避免阻挡输入事件
-- **Area2D点击检测** - 创建Area2D和CollisionShape2D实现精确的点击检测
-- **调试信息系统** - 包含详细的调试打印，帮助追踪函数调用和事件触发
-- **鼠标事件处理** - 支持鼠标进入、离开和点击事件的检测
-
-卡牌工具还提供了通过类型字符串获取卡包实例的静态方法：
+**移动动画功能**：
 
 ```gdscript
-# 通过类型字符串获取卡包实例
-var strike_pack = CardUtil.get_card_pack_by_type("strike")
-```
+# 移动卡牌到指定位置（通用方法）
+var tween = CardUtil.move_card(card_instance, Vector2(500, 300), 1.5)
 
-卡牌工具还提供了随机移动卡牌到非中心区域的静态方法：
-
-```gdscript
 # 随机移动卡牌到非中心区域
 var move_distance = CardUtil.random_move_card(card_instance)
 print("卡牌移动了：", move_distance)
 ```
 
-这个方法会将卡牌实例随机移动到一个非中心区域（x和y坐标在-200到200范围内，但不在-50到50范围内），并使用Tween动画实现平滑移动效果。方法返回移动的距离向量，可用于后续处理。
+- `move_card(card_instance, target_position, duration)` - 通用的卡牌移动方法
+  - 自动停止之前的动画
+  - 使用Tween实现平滑移动
+  - 返回Tween实例供进一步操作
+- `random_move_card(card_instance)` - 随机移动到非中心区域
+  - 移动范围：X和Y坐标在-200到200范围内，但避开-50到50的中心区域
+  - 返回移动的距离向量
+
+#### 工具方法
+
+```gdscript
+# 通过类型字符串获取卡包实例
+var strike_pack = CardUtil.get_card_pack_by_type("strike")
+```
 
 #### 卡牌尺寸
 

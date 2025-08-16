@@ -15,6 +15,12 @@ var card_image: Texture2D = null
 # 卡包引用
 var card_pack: CardPackBase = null
 
+# 拖拽相关变量
+var is_dragging: bool = false
+var drag_offset: Vector2 = Vector2.ZERO
+# 存储当前活动的Tween引用，用于在拖拽时停止动画
+var active_tween: Tween = null
+
 # 节点引用
 @onready var sprite = $Sprite2D
 @onready var label = $Label
@@ -118,6 +124,34 @@ static func get_card_pack_by_type(type_name: String) -> CardPackBase:
 	
 	return pack
 
+# 移动卡牌到指定位置
+static func move_card(card_instance: Node2D, target_position: Vector2, duration: float = 1.0):
+	# 停止之前的Tween动画（如果存在）
+	if card_instance.has_method("get") and card_instance.get("active_tween") != null:
+		var old_tween = card_instance.get("active_tween")
+		if old_tween.is_valid():
+			old_tween.kill()
+	
+	# 创建Tween动画
+	var tween = card_instance.create_tween()
+	tween.set_trans(Tween.TRANS_QUART)
+	
+	# 保存Tween引用到卡牌实例（如果卡牌有active_tween属性）
+	if card_instance.has_method("set"):
+		card_instance.set("active_tween", tween)
+	
+	# 设置卡牌移动动画
+	tween.tween_property(card_instance, "position", target_position, duration)
+	
+	# 动画完成后清除引用
+	tween.finished.connect(func(): 
+		if card_instance.has_method("set"):
+			card_instance.set("active_tween", null)
+	)
+	
+	# 返回Tween实例，以便调用者可以进一步操作
+	return tween
+
 # 随机移动卡牌到非中心区域
 static func random_move_card(card_instance: Node2D):
 	# 生成随机的x坐标（-200到200范围内，但不在-50到50范围内）
@@ -141,13 +175,8 @@ static func random_move_card(card_instance: Node2D):
 	# 计算目标位置（相对当前位置）
 	var target_position = card_instance.position + Vector2(random_x, random_y)
 	
-	# 创建Tween动画
-	var tween = card_instance.create_tween()
-	tween.set_ease(Tween.EASE_OUT)
-	tween.set_trans(Tween.TRANS_QUART)
-	
-	# 设置卡牌移动动画
-	tween.tween_property(card_instance, "position", target_position, 1.0)
+	# 调用move_card方法移动卡牌
+	move_card(card_instance, target_position, 1.0)
 	
 	# 返回移动的距离向量
 	return Vector2(random_x, random_y)
@@ -227,11 +256,33 @@ func setup_input_detection():
 
 # 处理卡牌输入事件
 func _on_card_input_event(_viewport, event, _shape_idx):
-	# 只在鼠标点击时打印调试信息，避免鼠标移动时频繁触发
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 检测到鼠标左键点击")
-		# 打印卡牌信息
-		print_card_info()
+	# 处理鼠标按钮事件
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 检测到鼠标左键点击")
+			# 打印卡牌信息
+			print_card_info()
+			
+			# 停止当前活动的Tween动画，避免与拖拽冲突
+			if active_tween != null and active_tween.is_valid():
+				active_tween.kill()
+				active_tween = null
+				print("[DEBUG] 停止了正在进行的Tween动画")
+			
+			# 开始拖拽
+			is_dragging = true
+			drag_offset = global_position - get_global_mouse_position()
+			modulate.a = 0.8  # 拖拽时半透明效果
+		else:
+			# 鼠标释放，结束拖拽
+			is_dragging = false
+			modulate.a = 1.0  # 恢复透明度
+			print("[DEBUG] 卡牌拖拽结束，最终位置:", global_position)
+	
+	# 处理鼠标移动事件（用于拖拽）
+	elif event is InputEventMouseMotion and is_dragging:
+		# 更新卡牌位置跟随鼠标
+		global_position = get_global_mouse_position() + drag_offset
 
 # 鼠标进入事件（调试用）
 func _on_mouse_entered():

@@ -102,7 +102,7 @@ func reboot_root_node():
 
 #### 滑动卡牌功能
 
-提供了创建一张从屏幕左侧滑动到中央的卡牌功能，使用Tween动画系统实现平滑移动效果。
+提供了创建一张从屏幕左侧滑动到中央的卡牌功能，使用Tween动画系统实现平滑移动效果。支持与拖拽功能的冲突处理。
 
 ```gdscript
 func create_sliding_card():
@@ -127,6 +127,10 @@ func create_sliding_card():
     tween.set_ease(Tween.EASE_OUT)
     tween.set_trans(Tween.TRANS_QUART)
     
+    # 保存Tween引用到卡牌实例，以便拖拽时能停止动画
+    if card_instance.has_method("set"):
+        card_instance.set("active_tween", tween)
+    
     # 设置卡牌移动动画（从左到右）
     tween.tween_property(card_instance, "position", Vector2(960, 540), 1.5)
     
@@ -134,13 +138,25 @@ func create_sliding_card():
     tween.tween_property(card_instance, "position", Vector2(960, 520), 0.5)
     tween.tween_property(card_instance, "position", Vector2(960, 540), 0.5)
     
+    # 动画完成后清除引用
+    tween.finished.connect(func(): 
+        if card_instance.has_method("set"):
+            card_instance.set("active_tween", null)
+    )
+    
     # 打印创建信息
     print("创建了一张从左向右滑动的打击卡牌！")
 ```
 
+**特性**：
+- 卡牌从屏幕左侧滑入到中央位置
+- 包含轻微的上下浮动效果
+- 支持拖拽功能，拖拽时会自动停止滑动动画
+- 动画完成后自动清除Tween引用
+
 #### 随机移动卡牌功能
 
-提供了创建一张卡牌并将其随机移动到非中心区域的功能，使用CardUtil.random_move_card方法实现随机移动效果。卡牌会移动到X和Y坐标在-200到200范围内，但避开-50到50的中心区域。
+提供了创建一张卡牌并将其随机移动到非中心区域的功能，使用CardUtil.random_move_card方法实现随机移动效果。支持与拖拽功能的冲突处理。
 
 ```gdscript
 func create_random_move_card():
@@ -167,6 +183,12 @@ func create_random_move_card():
     print("创建了一张随机移动的打击卡牌！")
     print("卡牌移动了：", move_distance)
 ```
+
+**特性**：
+- 卡牌随机移动到非中心区域（X和Y坐标在-200到200范围内，但避开-50到50的中心区域）
+- 使用CardUtil.move_card方法实现平滑移动动画
+- 支持拖拽功能，拖拽时会自动停止随机移动动画
+- 返回移动距离向量供调试使用
 
 ## 开发指南
 
