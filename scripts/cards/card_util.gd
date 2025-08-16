@@ -15,20 +15,122 @@ var card_image: Texture2D = null
 # 卡包引用
 var card_pack: CardPackBase = null
 
-# 拖拽相关变量
+# 卡牌拖拽相关变量
 var is_dragging: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
 # 存储当前活动的Tween引用，用于在拖拽时停止动画
 var active_tween: Tween = null
+
+# 卡牌层级管理
+static var card_layer_counter: int = 0  # 全局层级计数器
+var card_layer: int = 0  # 当前卡牌的层级
+static var all_cards: Array[Node2D] = []  # 所有卡牌实例的引用
 
 # 节点引用
 @onready var sprite = $Sprite2D
 @onready var label = $Label
 @onready var desc_label = $Description
 
+# 注册卡牌到全局管理器
+func register_card():
+	# 分配层级
+	card_layer = card_layer_counter
+	card_layer_counter += 1
+	
+	# 设置z_index
+	z_index = card_layer
+	
+	# 添加到全局卡牌列表
+	all_cards.append(self)
+	
+	GlobalUtil.log("卡牌注册，层级:" + str(card_layer) + " z_index:" + str(z_index), GlobalUtil.LogLevel.DEBUG)
+
+# 注销卡牌（在卡牌被删除时调用）
+func unregister_card():
+	if self in all_cards:
+		all_cards.erase(self)
+		GlobalUtil.log("卡牌注销，层级:" + str(card_layer), GlobalUtil.LogLevel.DEBUG)
+
+# 将卡牌移动到最上层
+func bring_to_front():
+	# 更新层级为当前最高层级
+	card_layer = card_layer_counter
+	card_layer_counter += 1
+	
+	# 更新z_index
+	z_index = card_layer
+	
+	GlobalUtil.log("卡牌移动到最上层，新层级:" + str(card_layer), GlobalUtil.LogLevel.DEBUG)
+
+# 检查当前卡牌是否是点击位置的最上层卡牌
+func is_top_card_at_position(mouse_pos: Vector2) -> bool:
+	# 获取在鼠标位置的所有卡牌
+	var cards_at_position: Array[Node2D] = []
+	
+	for card in all_cards:
+		if card == null or not is_instance_valid(card):
+			continue
+			
+		# 检查鼠标是否在卡牌范围内
+		var card_rect = Rect2(
+			card.global_position - Vector2(CARD_WIDTH/2, CARD_HEIGHT/2),
+			Vector2(CARD_WIDTH, CARD_HEIGHT)
+		)
+		
+		if card_rect.has_point(mouse_pos):
+			cards_at_position.append(card)
+	
+	# 如果没有其他卡牌在此位置，返回true
+	if cards_at_position.size() <= 1:
+		return true
+	
+	# 找到最高层级的卡牌
+	var top_card = null
+	var highest_layer = -1
+	
+	for card in cards_at_position:
+		if card.has_method("get") and card.get("card_layer") != null:
+			var layer = card.get("card_layer")
+			if layer > highest_layer:
+				highest_layer = layer
+				top_card = card
+	
+	# 返回当前卡牌是否是最上层的
+	return top_card == self
+
+# 清理无效的卡牌引用（静态函数）
+static func cleanup_invalid_cards():
+	var valid_cards: Array[Node2D] = []
+	
+	for card in all_cards:
+		if card != null and is_instance_valid(card):
+			valid_cards.append(card)
+	
+	all_cards = valid_cards
+	GlobalUtil.log("清理无效卡牌引用，当前有效卡牌数量:" + str(all_cards.size()), GlobalUtil.LogLevel.DEBUG)
+
+# 获取所有卡牌的调试信息（静态函数）
+static func get_all_cards_debug_info() -> String:
+	cleanup_invalid_cards()
+	
+	var info = "=== 所有卡牌信息 ===\n"
+	info += "卡牌总数: " + str(all_cards.size()) + "\n"
+	
+	for i in range(all_cards.size()):
+		var card = all_cards[i]
+		if card != null and is_instance_valid(card):
+			info += "卡牌 " + str(i) + ": 层级=" + str(card.get("card_layer")) + ", z_index=" + str(card.z_index) + "\n"
+	
+	info += "==================\n"
+	return info
+
 # 初始化函数
 func _ready():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 _ready() 函数")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 _ready() 函数", GlobalUtil.LogLevel.DEBUG)
+	
+	# 注册卡牌到全局管理器
+	register_card()
+	
 	# 更新卡牌显示
 	update_display()
 	
@@ -41,9 +143,14 @@ func _ready():
 	# 添加点击区域
 	setup_input_detection()
 
+# 当节点退出场景树时调用
+func _exit_tree():
+	# 注销卡牌
+	unregister_card()
+
 # 设置卡牌数据
 func set_card_data(p_name: String, p_description: String, p_image: Texture2D = null):
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 set_card_data() 函数，卡牌名称: ", p_name)
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 set_card_data() 函数，卡牌名称: " + p_name, GlobalUtil.LogLevel.DEBUG)
 	card_name = p_name
 	description = p_description
 	card_image = p_image
@@ -54,7 +161,7 @@ func set_card_data(p_name: String, p_description: String, p_image: Texture2D = n
 
 # 更新卡牌显示
 func update_display():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 update_display() 函数")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 update_display() 函数", GlobalUtil.LogLevel.DEBUG)
 	# 更新文本
 	label.text = card_name
 	desc_label.text = description
@@ -68,7 +175,7 @@ func update_display():
 
 # 调整精灵大小以适应卡牌固定尺寸
 func adjust_sprite_size():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 adjust_sprite_size() 函数")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 adjust_sprite_size() 函数", GlobalUtil.LogLevel.DEBUG)
 	if sprite.texture == null:
 		return
 		
@@ -87,7 +194,7 @@ func adjust_sprite_size():
 	
 # 从卡包加载卡牌
 func load_from_card_pack(p_card_pack):
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 load_from_card_pack() 函数")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 load_from_card_pack() 函数", GlobalUtil.LogLevel.DEBUG)
 	if p_card_pack is CardPackBase:
 		# 保存卡包引用
 		card_pack = p_card_pack
@@ -102,7 +209,7 @@ func load_from_card_pack(p_card_pack):
 
 # 通过卡包类型字符串加载卡牌
 func load_from_card_type(type_name: String):
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 load_from_card_type() 函数，类型: ", type_name)
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 load_from_card_type() 函数，类型: " + type_name, GlobalUtil.LogLevel.DEBUG)
 	# 通过类型字符串获取卡包实例
 	var pack = get_card_pack_by_type(type_name)
 	
@@ -183,25 +290,25 @@ static func random_move_card(card_instance: Node2D):
 
 # 设置输入检测
 func setup_input_detection():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 setup_input_detection() 函数")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 setup_input_detection() 函数", GlobalUtil.LogLevel.DEBUG)
 	
 	# 关键修复：设置所有Control节点的mouse_filter为IGNORE，避免阻挡输入事件
 	var card_background = get_node("CardBackground")
 	if card_background and card_background is Control:
 		card_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 设置CardBackground mouse_filter为IGNORE")
+		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置CardBackground mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)
 	
 	# 设置Label节点的mouse_filter
 	var label = get_node("Label")
 	if label and label is Control:
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 设置Label mouse_filter为IGNORE")
+		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置Label mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)
 	
 	# 设置Description节点的mouse_filter
 	var description = get_node("Description")
 	if description and description is Control:
 		description.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 设置Description mouse_filter为IGNORE")
+		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置Description mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)
 	
 	# 创建一个Area2D节点用于检测点击
 	var click_area = Area2D.new()
@@ -237,10 +344,10 @@ func setup_input_detection():
 	var shape_right = global_pos.x + CARD_WIDTH / 2
 	var shape_top = global_pos.y - CARD_HEIGHT / 2
 	var shape_bottom = global_pos.y + CARD_HEIGHT / 2
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " Shape绝对坐标范围:")
-	print("  左边界:", shape_left, " 右边界:", shape_right)
-	print("  上边界:", shape_top, " 下边界:", shape_bottom)
-	print("  中心点:", global_pos)
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " Shape绝对坐标范围:", GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("  左边界:" + str(shape_left) + " 右边界:" + str(shape_right), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("  上边界:" + str(shape_top) + " 下边界:" + str(shape_bottom), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("  中心点:" + str(global_pos), GlobalUtil.LogLevel.DEBUG)
 	
 	# 连接输入事件
 	click_area.input_event.connect(_on_card_input_event)
@@ -249,25 +356,35 @@ func setup_input_detection():
 	click_area.mouse_exited.connect(_on_mouse_exited)
 	
 	# 添加调试信息
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " Area2D设置完成:")
-	print("  - input_pickable:", click_area.input_pickable)
-	print("  - collision_layer:", click_area.collision_layer)
-	print("  - collision_mask:", click_area.collision_mask)
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " Area2D设置完成:", GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("  - input_pickable:" + str(click_area.input_pickable), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("  - collision_layer:" + str(click_area.collision_layer), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("  - collision_mask:" + str(click_area.collision_mask), GlobalUtil.LogLevel.DEBUG)
 
 # 处理卡牌输入事件
 func _on_card_input_event(_viewport, event, _shape_idx):
 	# 处理鼠标按钮事件
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 检测到鼠标左键点击")
+			GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 检测到鼠标左键点击", GlobalUtil.LogLevel.DEBUG)
+			
+			# 检查当前卡牌是否是点击位置的最上层卡牌
+			var mouse_pos = get_global_mouse_position()
+			if not is_top_card_at_position(mouse_pos):
+				GlobalUtil.log("卡牌不是最上层，忽略点击事件", GlobalUtil.LogLevel.DEBUG)
+				return
+			
 			# 打印卡牌信息
 			print_card_info()
+			
+			# 将当前卡牌移动到最上层
+			bring_to_front()
 			
 			# 停止当前活动的Tween动画，避免与拖拽冲突
 			if active_tween != null and active_tween.is_valid():
 				active_tween.kill()
 				active_tween = null
-				print("[DEBUG] 停止了正在进行的Tween动画")
+				GlobalUtil.log("停止了正在进行的Tween动画", GlobalUtil.LogLevel.DEBUG)
 			
 			# 开始拖拽
 			is_dragging = true
@@ -277,7 +394,7 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 			# 鼠标释放，结束拖拽
 			is_dragging = false
 			modulate.a = 1.0  # 恢复透明度
-			print("[DEBUG] 卡牌拖拽结束，最终位置:", global_position)
+			GlobalUtil.log("卡牌拖拽结束，最终位置:" + str(global_position), GlobalUtil.LogLevel.DEBUG)
 	
 	# 处理鼠标移动事件（用于拖拽）
 	elif event is InputEventMouseMotion and is_dragging:
@@ -286,18 +403,24 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 
 # 鼠标进入事件（调试用）
 func _on_mouse_entered():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 鼠标进入卡牌区域")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 鼠标进入卡牌区域", GlobalUtil.LogLevel.DEBUG)
 
 # 鼠标离开事件（调试用）
 func _on_mouse_exited():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 鼠标离开卡牌区域")
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 鼠标离开卡牌区域", GlobalUtil.LogLevel.DEBUG)
 
 # 打印卡牌信息
 func print_card_info():
-	print("[DEBUG] 卡牌实例ID:", get_instance_id(), " 调用 print_card_info() 函数")
-	print("===== 卡牌信息 =====")
-	print("名称: ", card_name)
-	print("描述: ", description)
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 print_card_info() 函数", GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("===== 卡牌信息 =====", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("名称: " + card_name, GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("描述: " + description, GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("层级: " + str(card_layer), GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("z_index: " + str(z_index), GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("位置: " + str(global_position), GlobalUtil.LogLevel.INFO)
 	if card_pack:
-		print("卡包: ", card_pack.pack_name)
-	print("===================")
+		GlobalUtil.log("卡包: " + card_pack.pack_name, GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("===================", GlobalUtil.LogLevel.INFO)
+	
+	# 打印所有卡牌的调试信息
+	GlobalUtil.log(get_all_cards_debug_info(), GlobalUtil.LogLevel.INFO)

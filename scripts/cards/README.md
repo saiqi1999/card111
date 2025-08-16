@@ -61,6 +61,13 @@ card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 - 鼠标释放结束拖拽，恢复正常透明度
 - 拖拽开始时自动停止正在进行的Tween动画，避免冲突
 
+**层级管理系统**：解决多张卡牌重叠时的交互问题：
+- 自动注册和管理所有卡牌实例
+- 只有最上层的卡牌响应鼠标点击
+- 点击卡牌时自动将其置于最上层
+- 支持失效卡牌的自动清理
+- 每张卡牌都有唯一的层级标识
+
 **移动动画功能**：
 
 ```gdscript
@@ -85,6 +92,13 @@ print("卡牌移动了：", move_distance)
 ```gdscript
 # 通过类型字符串获取卡包实例
 var strike_pack = CardUtil.get_card_pack_by_type("strike")
+
+# 层级管理相关方法
+CardUtil.register_card(card_instance)  # 注册卡牌到层级管理系统
+CardUtil.unregister_card(card_instance)  # 从层级管理系统移除卡牌
+CardUtil.bring_to_front(card_instance)  # 将卡牌置于最上层
+var is_top = CardUtil.is_top_card_at_position(card_instance, mouse_position)  # 检查是否为最上层卡牌
+CardUtil.cleanup_invalid_cards()  # 清理失效的卡牌引用
 ```
 
 #### 卡牌尺寸

@@ -3,9 +3,52 @@ extends Node
 # 全局工具类，提供通用功能
 class_name GlobalUtil
 
-# 显示调试信息
+# 日志开关，控制是否输出日志
+static var log_enabled: bool = true
+
+# 日志级别枚举
+enum LogLevel {
+	DEBUG,
+	INFO,
+	WARNING,
+	ERROR
+}
+
+# 统一的日志输出方法
+static func log(message: String, level: LogLevel = LogLevel.INFO) -> void:
+	if not log_enabled:
+		return
+	
+	var level_prefix: String
+	match level:
+		LogLevel.DEBUG:
+			level_prefix = "[DEBUG]"
+		LogLevel.INFO:
+			level_prefix = "[INFO]"
+		LogLevel.WARNING:
+			level_prefix = "[WARNING]"
+		LogLevel.ERROR:
+			level_prefix = "[ERROR]"
+		_:
+			level_prefix = "[LOG]"
+	
+	print(level_prefix + " " + message)
+
+# 设置日志开关
+static func set_log_enabled(enabled: bool) -> void:
+	log_enabled = enabled
+	if enabled:
+		GlobalUtil.log("日志输出已启用", GlobalUtil.LogLevel.INFO)
+	else:
+		print("[INFO] 日志输出已禁用")  # 这里仍然输出，告知用户日志已禁用
+
+# 获取日志开关状态
+static func is_log_enabled() -> bool:
+	return log_enabled
+
+# 显示调试信息（保持向后兼容）
 func debug_log(message: String) -> void:
-	print("[DEBUG] " + message)
+	GlobalUtil.log(message, GlobalUtil.LogLevel.DEBUG)
 
 # 获取当前时间戳
 func get_timestamp() -> int:

@@ -6,9 +6,16 @@
 
 ### util.gd
 
-`util.gd` 是全局工具类，提供了一系列通用的工具方法：
+`util.gd` 是全局工具类，提供了一系列通用的工具方法和统一的日志管理系统：
 
-- `debug_log(message)`: 输出调试信息
+#### 日志管理功能
+- `log(message, level)`: 统一的日志输出接口，支持日志级别控制
+- `set_log_enabled(enabled)`: 动态开启/关闭日志输出
+- `is_log_enabled()`: 检查当前日志状态
+- `LogLevel` 枚举: 支持DEBUG、INFO、WARNING、ERROR四个级别
+
+#### 通用工具方法
+- `debug_log(message)`: 输出调试信息（已更新为调用log方法）
 - `get_timestamp()`: 获取当前时间戳
 - `random_int(min_value, max_value)`: 生成指定范围内的随机整数
 - `calculate_distance(point1, point2)`: 计算两点之间的距离
@@ -37,17 +44,38 @@
 ```gdscript
 # 使用全局工具的示例
 func _ready():
-    # 输出调试信息
-    GlobalUtil.debug_log("Hello World!")
+    # 使用新的日志系统
+    GlobalUtil.log("Hello World!", GlobalUtil.LogLevel.INFO)
     
-    # 获取随机数
+    # 不同级别的日志输出
+    GlobalUtil.log("调试信息", GlobalUtil.LogLevel.DEBUG)
+    GlobalUtil.log("一般信息", GlobalUtil.LogLevel.INFO)
+    GlobalUtil.log("警告信息", GlobalUtil.LogLevel.WARNING)
+    GlobalUtil.log("错误信息", GlobalUtil.LogLevel.ERROR)
+    
+    # 控制日志开关
+    GlobalUtil.set_log_enabled(false)  # 关闭日志
+    GlobalUtil.log("这条信息不会显示", GlobalUtil.LogLevel.INFO)
+    GlobalUtil.set_log_enabled(true)   # 开启日志
+    
+    # 检查日志状态
+    if GlobalUtil.is_log_enabled():
+        GlobalUtil.log("日志已开启", GlobalUtil.LogLevel.INFO)
+    
+    # 使用其他工具方法
     var random_value = GlobalUtil.random_int(1, 10)
-    GlobalUtil.debug_log("随机数: %d" % random_value)
+    GlobalUtil.log("随机数: %d" % random_value, GlobalUtil.LogLevel.DEBUG)
     
-    # 计算距离
     var distance = GlobalUtil.calculate_distance(Vector2(0, 0), Vector2(3, 4))
-    GlobalUtil.debug_log("距离: %f" % distance)
+    GlobalUtil.log("距离: %f" % distance, GlobalUtil.LogLevel.DEBUG)
 ```
+
+### 日志系统特性
+
+- **性能优化**: 关闭日志时可显著提升游戏性能
+- **级别控制**: 支持不同级别的日志输出，便于调试和发布
+- **动态控制**: 运行时可通过命令或代码动态开启/关闭
+- **统一管理**: 所有日志输出通过统一接口管理，便于维护
 
 ## 注意事项
 

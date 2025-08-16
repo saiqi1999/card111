@@ -32,67 +32,111 @@ func _on_button_pressed():
 
 #### 输入框文本提交功能
 
-当在输入框中输入文本并按下回车键时，会触发文本提交事件。特别地，当输入"hello"时，会打印特定的问候信息；当输入"reboot"时，会重启root节点，清除所有卡牌并重新初始化全局工具；当输入"slide"时，会创建一张从屏幕左侧滑动到中央的卡牌；当输入"random"时，会创建一张卡牌并将其随机移动到非中心区域。
+当在输入框中输入文本并按下回车键时，会触发文本提交事件。调试界面支持多种命令来测试不同的游戏功能。
+
+#### 支持的调试命令
+
+- `hello` - 显示问候信息
+- `reboot` - 重启root节点，清除所有卡牌并重新初始化全局工具
+- `slide` - 创建一张从屏幕左侧滑动到中央的卡牌，并添加轻微的上下浮动动画
+- `random` - 创建一张卡牌并将其随机移动到非中心区域（避开中心区域）
+- `overlap` - 创建5张重叠的卡牌，用于测试层级管理功能
+- `log on` - 开启日志输出
+- `log off` - 关闭日志输出
+- `help` - 显示所有可用命令和当前日志状态
 
 ```gdscript
 func _on_input_field_text_submitted(text: String):
-    # 检查输入的文本
+    # 检查输入的文本并执行相应命令
     if text.to_lower() == "hello":
-        # 打印一行信息
-        print("你好，世界！")
-        
-        # 在控制台显示一条消息
-        print("收到问候：" + text)
+        GlobalUtil.log("你好，世界！", GlobalUtil.LogLevel.INFO)
+        GlobalUtil.log("收到问候：" + text, GlobalUtil.LogLevel.INFO)
     elif text.to_lower() == "reboot":
-        # 打印重启信息
-        print("正在重启root节点...")
-        
-        # 调用重启方法
+        GlobalUtil.log("正在重启root节点...", GlobalUtil.LogLevel.INFO)
         reboot_root_node()
     elif text.to_lower() == "slide":
-        # 打印滑动信息
-        print("创建滑动卡牌...")
-        
-        # 调用滑动卡牌方法
+        GlobalUtil.log("创建滑动卡牌", GlobalUtil.LogLevel.INFO)
         create_sliding_card()
     elif text.to_lower() == "random":
-        # 打印随机移动信息
-        print("创建随机移动卡牌...")
-        
-        # 调用随机移动卡牌方法
+        GlobalUtil.log("创建随机移动卡牌", GlobalUtil.LogLevel.INFO)
         create_random_move_card()
+    elif text.to_lower() == "overlap":
+        GlobalUtil.log("创建重叠卡牌测试", GlobalUtil.LogLevel.INFO)
+        create_overlapping_cards_test()
+    elif text.to_lower() == "log off":
+        GlobalUtil.set_log_enabled(false)
+        GlobalUtil.log("日志输出已关闭", GlobalUtil.LogLevel.INFO)
+    elif text.to_lower() == "log on":
+        GlobalUtil.set_log_enabled(true)
+        GlobalUtil.log("日志输出已开启", GlobalUtil.LogLevel.INFO)
+    elif text.to_lower() == "help":
+        show_help()
     else:
-        # 打印其他输入
-        print("收到输入：" + text)
+        GlobalUtil.log("未知命令：" + text + "，输入 'help' 查看可用命令", GlobalUtil.LogLevel.WARNING)
     
     # 清空输入框
     input_field.text = ""
 ```
 
-#### 重启root节点功能
+#### 特殊功能方法
 
-提供了重启root节点的功能，清除所有卡牌并重新初始化全局工具。
-
+**重启root节点功能**：
 ```gdscript
 func reboot_root_node():
-    # 获取root节点
+    # 获取root节点并清除所有卡牌
     var root = get_tree().get_root().get_node("Root")
-    
-    # 清除所有卡牌
     for child in root.get_children():
-        # 跳过Debug和Util节点
         if child.name != "Debug" and child.name != "Util":
-            # 移除子节点
             root.remove_child(child)
-            # 释放资源
             child.queue_free()
-    
-    # 重置卡牌计数
     card_count = 0
-    
-    # 打印重启完成信息
-    print("root节点已重启，所有卡牌已清除")
-    
+    GlobalUtil.log("root节点已重启，所有卡牌已清除", GlobalUtil.LogLevel.INFO)
+```
+
+**滑动卡牌创建**：
+```gdscript
+func create_sliding_card():
+    # 创建从屏幕左侧滑动到中央的卡牌
+    var card_instance = preload("res://scenes/card.tscn").instantiate()
+    card_instance.load_from_card_type("strike")
+    card_instance.position = Vector2(-200, 540)
+    get_tree().get_root().get_node("Root").add_child(card_instance)
+    CardUtil.move_card(card_instance, Vector2(960, 540), 2.0)
+```
+
+**随机移动卡牌创建**：
+```gdscript
+func create_random_move_card():
+    # 创建卡牌并随机移动到非中心区域
+    var card_instance = preload("res://scenes/card.tscn").instantiate()
+    card_instance.load_from_card_type("strike")
+    card_instance.position = Vector2(960, 540)
+    get_tree().get_root().get_node("Root").add_child(card_instance)
+    CardUtil.random_move_card(card_instance)
+```
+
+**重叠卡牌测试**：
+```gdscript
+func create_overlapping_cards_test():
+    # 创建5张重叠的卡牌，用于测试层级管理
+    for i in range(5):
+        var card_instance = preload("res://scenes/card.tscn").instantiate()
+        card_instance.load_from_card_type("strike")
+        card_instance.position = Vector2(960 + i * 20, 540 + i * 20)
+        get_tree().get_root().get_node("Root").add_child(card_instance)
+```
+
+**帮助信息显示**：
+```gdscript
+func show_help():
+    # 显示所有可用命令和当前日志状态
+    GlobalUtil.log("=== 可用命令 ===", GlobalUtil.LogLevel.INFO)
+    GlobalUtil.log("hello - 显示问候信息", GlobalUtil.LogLevel.INFO)
+    GlobalUtil.log("reboot - 重启并清除所有卡牌", GlobalUtil.LogLevel.INFO)
+    # ... 其他命令说明
+    var log_status = "开启" if GlobalUtil.is_log_enabled() else "关闭"
+    GlobalUtil.log("当前日志状态：" + log_status, GlobalUtil.LogLevel.INFO)
+
     # 重新初始化全局工具
     var util_node = root.get_node("Util")
     if util_node and util_node.has_method("_ready"):

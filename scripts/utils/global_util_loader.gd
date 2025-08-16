@@ -16,18 +16,18 @@ func _ready() -> void:
 	Engine.register_singleton("GlobalUtil", global_util)
 	
 	# 输出调试信息
-	global_util.debug_log("全局工具已加载")
+	GlobalUtil.log("全局工具已加载", GlobalUtil.LogLevel.INFO)
 	
 	# 测试全局工具方法
 	var current_time = global_util.get_timestamp()
-	global_util.debug_log("当前时间戳: %d" % current_time)
+	GlobalUtil.log("当前时间戳: " + str(current_time), GlobalUtil.LogLevel.DEBUG)
 	
 	var random_number = global_util.random_int(1, 100)
-	global_util.debug_log("随机数(1-100): %d" % random_number)
+	GlobalUtil.log("随机数(1-100): " + str(random_number), GlobalUtil.LogLevel.DEBUG)
 
 # 当场景树退出时清理资源
 func _exit_tree() -> void:
 	# 移除全局工具单例
 	if Engine.has_singleton("GlobalUtil"):
+		GlobalUtil.log("全局工具已卸载", GlobalUtil.LogLevel.INFO)
 		Engine.unregister_singleton("GlobalUtil")
-		global_util.debug_log("全局工具已卸载")
