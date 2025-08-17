@@ -50,6 +50,11 @@
 #### 日志配置常量
 - `DEFAULT_LOG_ENABLED`: 默认日志开关状态（true）
 
+#### 容器层级常量
+- `CONTAINER_Z_INDEX`: 容器主体层级（10000000）
+- `CONTAINER_TITLE_Z_INDEX`: 容器标题层级（10000015）
+- `CONTAINER_UI_Z_INDEX`: 容器UI元素层级（10000020）
+
 ### global_util_loader.gd
 
 `global_util_loader.gd` 是全局工具加载器，负责初始化全局工具实例和全局常量，并将其注册为自动加载单例。

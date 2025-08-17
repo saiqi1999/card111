@@ -11,9 +11,9 @@ func _init():
 	# 调用父类初始化
 	super._init("400x300容器", "标准尺寸的容器，适用于大部分场景")
 	
-	# 设置容器特有属性
-	container_width = 400.0
-	container_height = 300.0
+	# 设置容器特有属性（使用全局常量）
+	container_width = GlobalConstants.CONTAINER_WIDTH
+	container_height = GlobalConstants.CONTAINER_HEIGHT
 	# 设置容器纹理
 	container_texture = preload("res://assets/images/frame.jpg")
 	on_click = container_400_300_click_effect

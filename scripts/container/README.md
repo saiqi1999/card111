@@ -8,6 +8,7 @@
 - `container_util.gd` - 容器工具类，负责容器的实例化、显示和管理
 - `prefabs/` - 容器预制件文件夹
   - `container_400_300.gd` - 400x300尺寸的容器包
+  - `container_big.gd` - 大尺寸容器预制件，支持更丰富的UI交互
 - `README.md` - 本说明文件
 
 ## 容器抽象基类 (ContainerBase)
@@ -74,13 +75,16 @@
    - 优化事件处理优先级，确保卡牌事件不被容器拦截
 
 5. **容器层级管理**
-   - 容器z_index设置为100，显示在卡牌上方
+   - 使用全局常量统一管理层级设置
+   - 容器主体使用 `GlobalConstants.CONTAINER_Z_INDEX`
+   - 容器标题使用 `GlobalConstants.CONTAINER_TITLE_Z_INDEX`
+   - 容器UI元素使用 `GlobalConstants.CONTAINER_UI_Z_INDEX`
    - 确保容器纹理始终可见
    - 保持容器与卡牌的正确层级关系
 
 ## 容器预制件 (Prefabs)
 
-### 400x300容器包 (Container400x300)
+### 标准容器 (Container400x300)
 
 `prefabs/container_400_300.gd` 继承自 `ContainerBase`，定义400x300尺寸容器的特有属性。
 
@@ -110,6 +114,40 @@ func _init():
 # 400x300容器的特有点击效果
 func container_400_300_click_effect(container_instance):
 	# 定义特有的点击行为
+	pass
+```
+
+### 大容器 (ContainerBig)
+
+`prefabs/container_big.gd` 继承自 `ContainerBase`，提供大尺寸容器预制件，支持更丰富的UI交互。
+
+#### 主要功能
+
+- **大尺寸界面**: 提供更大的显示区域
+- **确认按钮**: 支持用户确认操作
+- **卡槽系统**: 提供3个卡槽用于卡牌放置
+- **统一层级管理**: 使用全局常量管理UI元素层级
+- **智能交互**: 支持卡槽点击和确认按钮交互
+
+#### 实现示例
+
+```gdscript
+extends ContainerBase
+class_name ContainerBig
+
+func _init():
+	# 调用父类初始化
+	super._init("大容器", "大尺寸容器，支持更丰富的UI交互")
+	
+	# 设置容器特有属性
+	container_width = 800.0
+	container_height = 600.0
+	container_texture = preload("res://assets/images/big_container_frame.jpg")
+	on_click = container_big_click_effect
+
+# 大容器的特有点击效果
+func container_big_click_effect(container_instance):
+	# 定义大容器的特有点击行为
 	pass
 ```
 
@@ -152,8 +190,10 @@ add_child(container)
 
 ### 通过卡牌召唤容器（推荐方式）
 
+#### 召唤标准容器
+
 ```gdscript
-# 在卡牌点击效果中召唤容器
+# 在卡牌点击效果中召唤标准容器
 func want_slime_click_effect(card_instance):
     # 创建容器实例
     var container_instance = preload("res://scripts/container/container_util.gd").new()
@@ -180,20 +220,59 @@ func want_slime_click_effect(card_instance):
     container_instance.set_title_and_description_ui(card_title, card_desc)
 ```
 
+#### 召唤大容器
+
+```gdscript
+# 在卡牌点击效果中召唤大容器
+func summon_big_container_click_effect(card_instance):
+    # 创建大容器实例
+    var container_instance = preload("res://scripts/container/container_util.gd").new()
+    
+    # 从容器类型加载数据
+    container_instance.load_from_container_type("big")
+    
+    # 设置容器位置（大容器通常居中显示）
+    container_instance.global_position = Vector2(0, 0)
+    
+    # 设置召唤卡牌引用
+    container_instance.set_summoner_card(card_instance)
+    
+    # 添加到场景树
+    card_instance.get_tree().current_scene.add_child(container_instance)
+    
+    # 等待一帧确保完全初始化
+    await card_instance.get_tree().process_frame
+    
+    # 设置动态标题和描述
+    var card_title = card_instance.card_name if card_instance.card_name else "大容器标题"
+    var card_desc = card_instance.description if card_instance.description else "大容器描述"
+    container_instance.set_title_and_description_ui(card_title, card_desc)
+```
+
 ### 方法一：使用场景文件
 ```gdscript
-# 加载容器场景（使用400x300容器）
+# 加载标准容器场景（使用400x300容器）
 var container_scene = preload("res://scenes/container.tscn")
 var container_instance = container_scene.instantiate()
 get_tree().current_scene.add_child(container_instance)
+
+# 加载大容器场景
+var big_container_scene = preload("res://scenes/container_big.tscn")
+var big_container_instance = big_container_scene.instantiate()
+get_tree().current_scene.add_child(big_container_instance)
 ```
 
 ### 方法二：直接使用脚本
 ```gdscript
-# 创建400x300容器
+# 创建400x300标准容器
 var container_class = preload("res://scripts/container/container_400_300.gd")
 var container_instance = container_class.new()
 get_tree().current_scene.add_child(container_instance)
+
+# 创建大容器
+var big_container_class = preload("res://scripts/container/container_big.gd")
+var big_container_instance = big_container_class.new()
+get_tree().current_scene.add_child(big_container_instance)
 ```
 
 ### 容器特性
@@ -220,7 +299,8 @@ ContainerUtil (Node2D)
 └── 提供静态管理方法
 
 Prefabs/
-├── Container400x300
+├── Container400x300 (标准容器)
+├── ContainerBig (大容器)
 ├── 其他容器类型...
 └── 只关注特有属性和行为
 ```
@@ -230,19 +310,21 @@ Prefabs/
 容器系统经过多次优化，解决了以下关键问题：
 
 1. **点击检测冲突**: 通过调整事件处理优先级，确保卡牌拖拽不被容器拦截
-2. **层级显示问题**: 容器z_index设置为100，确保正确的视觉层级
+2. **层级显示问题**: 使用全局常量统一管理层级，确保正确的视觉层级
 3. **拖拽延迟**: 优化Area2D设置，减少拖拽响应延迟
 4. **事件传播**: 正确处理事件传播，避免误触发
 5. **透明背景**: 容器默认使用透明纹理，避免阻挡拖拽操作
 6. **拖拽优化**: 容器设置为IGNORE模式，Area2D优先级为-1，确保卡牌拖拽优先
 7. **输入处理**: 使用_input处理容器点击，通过Area2D的input_event处理容器内部点击
 8. **事件处理优化**: 重新组织事件处理优先级，优先检查卡牌和可拖拽元素，确保容器不会拦截卡牌事件
-9. **层级显示**: 容器z_index设置为100，确保容器纹理显示在卡牌上方，提供更好的视觉效果
+9. **层级显示**: 使用全局常量管理容器层级，确保容器纹理显示在正确位置，提供更好的视觉效果
 10. **类型安全**: 通过预加载和类型检查确保运行时安全
 11. **Node2D继承**: 改用Node2D继承，提供更好的2D坐标系统和位置管理，减少UI相关的bug
 12. **标题描述显示修复**: 修复容器显示默认文字问题，确保正确显示召唤者卡牌的名称和描述
 13. **初始化顺序修复**: 调整容器添加到场景树的时机，确保UI组件在设置标题描述前完全初始化
 14. **生命周期管理**: 完善容器的创建、初始化和销毁流程，避免状态不一致问题
+15. **大容器UI元素显示修复**: 修复大容器中确认按钮和卡槽z_index被重置导致不显示的问题，将z_index设置移到add_child()之后
+16. **统一层级管理优化**: 使用GlobalConstants统一管理所有容器相关的层级常量，提高代码一致性和可维护性
 
 ## 注意事项
 

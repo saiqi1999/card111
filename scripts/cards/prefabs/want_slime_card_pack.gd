@@ -35,10 +35,10 @@ func want_slime_click_effect(card_instance):
 	var container_instance = preload("res://scripts/container/container_util.gd").new()
 	
 	# 从容器类型加载容器数据
-	container_instance.load_from_container_type("400x300")
+	container_instance.load_from_container_type("1200x1000")
 	
-	# 设置容器位置（在卡牌左侧，向左移动一个卡牌宽度）
-	var container_position = Vector2(card_position.x - 220 - GlobalConstants.CARD_WIDTH, card_position.y)
+	# 设置容器位置（在卡牌左侧，向左移动两个卡牌宽度）
+	var container_position = Vector2(card_position.x - 220 - 2*GlobalConstants.CARD_WIDTH - GlobalConstants.CARD_WIDTH, card_position.y)
 	container_instance.global_position = container_position
 	
 	# 设置召唤此容器的卡牌引用

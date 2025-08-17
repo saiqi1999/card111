@@ -10,8 +10,9 @@ static var current_container: ContainerUtil = null
 # 容器属性
 var container_name: String = "未命名容器"
 var description: String = "无描述"
-var container_width: float = 400.0
-var container_height: float = 300.0
+# 容器基本属性
+var container_width: float = GlobalConstants.CONTAINER_WIDTH
+var container_height: float = GlobalConstants.CONTAINER_HEIGHT
 var container_texture: Texture2D = null
 var on_click: Callable = Callable()  # 容器点击时的个性化效果
 
@@ -33,8 +34,8 @@ func _ready():
 	GlobalUtil.log("容器初始化开始", GlobalUtil.LogLevel.DEBUG)
 	
 	# 设置容器的z_index为上层，确保容器及其UI元素显示在卡牌上方
-	z_index = 100
-	GlobalUtil.log("容器设置z_index为100，显示在卡牌上方", GlobalUtil.LogLevel.DEBUG)
+	z_index = GlobalConstants.CONTAINER_Z_INDEX
+	GlobalUtil.log("容器设置z_index为" + str(GlobalConstants.CONTAINER_Z_INDEX) + "，显示在卡牌上方", GlobalUtil.LogLevel.DEBUG)
 	
 	# 移除已存在的容器（确保场上只能存在一个容器）
 	if current_container != null and current_container != self:
@@ -180,14 +181,20 @@ func load_from_container_pack(pack: ContainerBase):
 	
 	GlobalUtil.log("从容器包加载数据: " + container_name, GlobalUtil.LogLevel.DEBUG)
 	
+	# 调用update_display统一处理显示更新
+	update_display()
+	
 	# 如果容器包有标题和描述属性，则设置到UI元素中
 	if "title_text" in pack and "description_text" in pack:
 		set_title_and_description_ui(pack.title_text, pack.description_text)
 	else:
 		pass
 	
-	# 调用update_display统一处理显示更新
-	update_display()
+	# 如果是大容器，创建特有的UI元素（在update_display之后）
+	if pack is ContainerBig:
+		var big_container = pack as ContainerBig
+		big_container.create_big_container_ui(self)
+		GlobalUtil.log("为大容器创建特有UI元素", GlobalUtil.LogLevel.DEBUG)
 
 # 通过类型字符串加载容器
 func load_from_container_type(type: String):
@@ -258,6 +265,8 @@ static func get_container_pack_by_type(type: String) -> ContainerBase:
 	match type:
 		"400x300":
 			return preload("res://scripts/container/prefabs/container_400_300.gd").new()
+		"1200x1000":
+			return preload("res://scripts/container/prefabs/container_big.gd").new()
 		_:
 			GlobalUtil.log("未知的容器类型: " + type, GlobalUtil.LogLevel.ERROR)
 			return null

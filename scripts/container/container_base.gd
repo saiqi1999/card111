@@ -8,9 +8,9 @@ class_name ContainerBase
 var container_name: String = "基础容器"
 var description: String = "基础容器描述"
 
-# 容器尺寸（子类需要重写）
-var container_width: float = 400.0
-var container_height: float = 300.0
+# 容器基本属性
+var container_width: float = GlobalConstants.CONTAINER_WIDTH
+var container_height: float = GlobalConstants.CONTAINER_HEIGHT
 
 # 容器背景纹理（子类需要设置，默认透明）
 @export var container_texture: Texture2D = null
