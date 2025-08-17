@@ -8,7 +8,6 @@
 - `container_util.gd` - 容器工具类，负责容器的实例化、显示和管理
 - `prefabs/` - 容器预制件文件夹
   - `container_400_300.gd` - 400x300尺寸的容器包
-- `container.gd` - 通用容器类（Node2D版本，待重构）
 - `README.md` - 本说明文件
 
 ## 容器抽象基类 (ContainerBase)
@@ -41,6 +40,21 @@
    - `current_container`: 静态变量，跟踪当前显示的容器实例
    - `remove_current_container()`: 移除当前容器的静态方法
    - `has_container()`: 检查是否存在容器的静态方法
+
+2. **动态标题描述系统**
+   - `set_title_and_description_ui()`: 动态设置容器标题和描述
+   - `title_label` 和 `description_label`: UI标签组件
+   - 支持从召唤卡牌获取标题和描述信息
+
+3. **召唤者关联系统**
+   - `set_summoner_card()`: 设置召唤此容器的卡牌引用
+   - `summoner_card`: 召唤卡牌的引用
+   - 智能检测召唤卡牌的点击事件
+
+4. **生命周期管理**
+   - 自动初始化UI组件（`setup_container()`）
+   - 确保场景中只存在一个容器实例
+   - 正确的事件处理顺序和初始化时机
 
 2. **容器显示**
    - `setup_container()`: 设置容器的基本结构（背景、点击区域等）
@@ -136,6 +150,36 @@ add_child(container)
 
 ## 使用方法
 
+### 通过卡牌召唤容器（推荐方式）
+
+```gdscript
+# 在卡牌点击效果中召唤容器
+func want_slime_click_effect(card_instance):
+    # 创建容器实例
+    var container_instance = preload("res://scripts/container/container_util.gd").new()
+    
+    # 从容器类型加载数据
+    container_instance.load_from_container_type("400x300")
+    
+    # 设置容器位置
+    var container_position = Vector2(card_position.x - 220 - GlobalConstants.CARD_WIDTH, card_position.y)
+    container_instance.global_position = container_position
+    
+    # 设置召唤卡牌引用
+    container_instance.set_summoner_card(card_instance)
+    
+    # 添加到场景树（触发_ready方法初始化UI）
+    card_instance.get_tree().current_scene.add_child(container_instance)
+    
+    # 等待一帧确保完全初始化
+    await card_instance.get_tree().process_frame
+    
+    # 设置动态标题和描述
+    var card_title = card_instance.card_name if card_instance.card_name else "默认标题"
+    var card_desc = card_instance.description if card_instance.description else "默认描述"
+    container_instance.set_title_and_description_ui(card_title, card_desc)
+```
+
 ### 方法一：使用场景文件
 ```gdscript
 # 加载容器场景（使用400x300容器）
@@ -181,19 +225,31 @@ Prefabs/
 └── 只关注特有属性和行为
 ```
 
+## 重要修复
+
+容器系统经过多次优化，解决了以下关键问题：
+
+1. **点击检测冲突**: 通过调整事件处理优先级，确保卡牌拖拽不被容器拦截
+2. **层级显示问题**: 容器z_index设置为100，确保正确的视觉层级
+3. **拖拽延迟**: 优化Area2D设置，减少拖拽响应延迟
+4. **事件传播**: 正确处理事件传播，避免误触发
+5. **透明背景**: 容器默认使用透明纹理，避免阻挡拖拽操作
+6. **拖拽优化**: 容器设置为IGNORE模式，Area2D优先级为-1，确保卡牌拖拽优先
+7. **输入处理**: 使用_input处理容器点击，通过Area2D的input_event处理容器内部点击
+8. **事件处理优化**: 重新组织事件处理优先级，优先检查卡牌和可拖拽元素，确保容器不会拦截卡牌事件
+9. **层级显示**: 容器z_index设置为100，确保容器纹理显示在卡牌上方，提供更好的视觉效果
+10. **类型安全**: 通过预加载和类型检查确保运行时安全
+11. **Node2D继承**: 改用Node2D继承，提供更好的2D坐标系统和位置管理，减少UI相关的bug
+12. **标题描述显示修复**: 修复容器显示默认文字问题，确保正确显示召唤者卡牌的名称和描述
+13. **初始化顺序修复**: 调整容器添加到场景树的时机，确保UI组件在设置标题描述前完全初始化
+14. **生命周期管理**: 完善容器的创建、初始化和销毁流程，避免状态不一致问题
+
 ## 注意事项
 
 1. **单例模式**: 系统确保场上只能存在一个容器实例
 2. **自动清理**: 当创建新容器时，会自动移除已存在的容器
 3. **智能点击**: 系统能智能识别点击目标，避免误操作
 4. **召唤卡牌**: 容器会记住召唤它的卡牌，支持特殊交互逻辑
-5. **透明背景**: 容器默认使用透明纹理，避免阻挡拖拽操作
-6. **拖拽优化**: 容器设置为IGNORE模式，Area2D优先级为-1，确保卡牌拖拽优先
-7. **输入处理**: 使用_unhandled_input处理容器点击，避免与卡牌拖拽冲突
-8. **事件处理优化**: 重新组织事件处理优先级，优先检查卡牌和可拖拽元素，确保容器不会拦截卡牌事件
-9. **层级显示**: 容器z_index设置为100，确保容器纹理显示在卡牌上方，提供更好的视觉效果
-10. **类型安全**: 通过预加载和类型检查确保运行时安全
-11. **Node2D继承**: 改用Node2D继承，提供更好的2D坐标系统和位置管理，减少UI相关的bug
 
 ## 扩展性
 

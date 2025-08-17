@@ -44,8 +44,17 @@ func want_slime_click_effect(card_instance):
 	# 设置召唤此容器的卡牌引用
 	container_instance.set_summoner_card(card_instance)
 	
-	# 将容器添加到场景树中
+	# 将容器添加到场景树中（这会触发_ready方法，初始化UI组件）
 	card_instance.get_tree().current_scene.add_child(container_instance)
+	
+	# 等待一帧确保容器完全初始化
+	await card_instance.get_tree().process_frame
+	
+	# 设置容器的标题和描述（使用召唤卡牌的card_base属性）
+	var card_title = card_instance.card_name if card_instance.card_name else "Want Slime"
+	var card_desc = card_instance.description if card_instance.description else "召唤一只可爱的史莱姆"
+	container_instance.set_title_and_description_ui(card_title, card_desc)
+	GlobalUtil.log("设置容器标题和描述 - 标题: " + card_title + ", 描述: " + card_desc, GlobalUtil.LogLevel.DEBUG)
 	
 	# 生成史莱姆数据
 	var slime_hp = randi() % 10 + 5  # 生成5-14的随机生命值

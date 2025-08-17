@@ -25,14 +25,16 @@ var summoner_card: Node2D = null
 var background: Sprite2D
 var area_2d: Area2D
 var collision_shape: CollisionShape2D
+var title_label: Label
+var description_label: Label
 
 func _ready():
 	# Node2D类型不需要设置mouse_filter
 	GlobalUtil.log("容器初始化开始", GlobalUtil.LogLevel.DEBUG)
 	
-	# 设置容器的z_index为最底层，避免遮挡卡牌操作
-	z_index = -100
-	GlobalUtil.log("容器设置z_index为-100，显示在最底层", GlobalUtil.LogLevel.DEBUG)
+	# 设置容器的z_index为上层，确保容器及其UI元素显示在卡牌上方
+	z_index = 100
+	GlobalUtil.log("容器设置z_index为100，显示在卡牌上方", GlobalUtil.LogLevel.DEBUG)
 	
 	# 移除已存在的容器（确保场上只能存在一个容器）
 	if current_container != null and current_container != self:
@@ -88,6 +90,33 @@ func setup_container():
 	shape.size = Vector2(container_width, container_height)
 	collision_shape.shape = shape
 	
+	# 创建标题Label
+	title_label = Label.new()
+	title_label.name = "TitleLabel"
+	title_label.text = "标题"
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_label.position = Vector2(-container_width / 2, -container_height / 2 + 20)
+	title_label.size = Vector2(container_width, 40)
+	title_label.add_theme_font_size_override("font_size", 18)
+	title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE  # 不拦截鼠标事件
+	add_child(title_label)
+	GlobalUtil.log("创建容器标题Label", GlobalUtil.LogLevel.DEBUG)
+	
+	# 创建描述Label
+	description_label = Label.new()
+	description_label.name = "DescriptionLabel"
+	description_label.text = "描述"
+	description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	description_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	description_label.position = Vector2(-container_width / 2, -container_height / 2 + 70)
+	description_label.size = Vector2(container_width, container_height - 100)
+	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description_label.add_theme_font_size_override("font_size", 14)
+	description_label.mouse_filter = Control.MOUSE_FILTER_IGNORE  # 不拦截鼠标事件
+	add_child(description_label)
+	GlobalUtil.log("创建容器描述Label", GlobalUtil.LogLevel.DEBUG)
+	
 	GlobalUtil.log("容器工具类初始化完成，尺寸: " + str(container_width) + "x" + str(container_height), GlobalUtil.LogLevel.DEBUG)
 
 func connect_signals():
@@ -111,11 +140,24 @@ func _on_container_input_event(_viewport, event, _shape_idx):
 	"""处理容器点击事件"""
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
-			GlobalUtil.log("点击了容器内部，不移除容器", GlobalUtil.LogLevel.DEBUG)
-			# 触发个性化点击效果
-			if on_click.is_valid():
-				on_click.call(self)
-			get_viewport().set_input_as_handled()
+			# 获取鼠标位置
+			var mouse_pos = get_global_mouse_position()
+			# 检查是否有卡牌在此位置
+			var has_card_at_position = _check_card_at_position(mouse_pos)
+			if has_card_at_position:
+				# 容器内有卡牌，完全不处理事件，让卡牌正常接收
+				GlobalUtil.log("点击了容器内部的卡牌，让卡牌处理事件", GlobalUtil.LogLevel.DEBUG)
+				# 不拦截事件，让事件继续传播到卡牌
+				return
+			else:
+				# 点击了容器内部的空白区域，保持容器显示
+				GlobalUtil.log("点击了容器内部空白区域，保持容器显示", GlobalUtil.LogLevel.DEBUG)
+				GlobalUtil.log(str(container_width) + "x" + str(container_height) + "容器被点击，容器实例ID: " + str(get_instance_id()), GlobalUtil.LogLevel.INFO)
+				# 触发个性化点击效果
+				if on_click.is_valid():
+					on_click.call(self)
+				# 只有点击空白区域时才拦截事件
+				get_viewport().set_input_as_handled()
 
 # 鼠标进入事件处理
 func _on_mouse_entered():
@@ -137,6 +179,12 @@ func load_from_container_pack(pack: ContainerBase):
 	on_click = data["on_click"]
 	
 	GlobalUtil.log("从容器包加载数据: " + container_name, GlobalUtil.LogLevel.DEBUG)
+	
+	# 如果容器包有标题和描述属性，则设置到UI元素中
+	if "title_text" in pack and "description_text" in pack:
+		set_title_and_description_ui(pack.title_text, pack.description_text)
+	else:
+		pass
 	
 	# 调用update_display统一处理显示更新
 	update_display()
@@ -182,6 +230,18 @@ func set_summoner_card(card: Node2D):
 	summoner_card = card
 	GlobalUtil.log("容器设置召唤卡牌，卡牌实例ID: " + str(card.get_instance_id()), GlobalUtil.LogLevel.DEBUG)
 
+# 设置标题和描述UI
+func set_title_and_description_ui(title: String, desc: String):
+	if title_label:
+		title_label.text = title
+		GlobalUtil.log("设置容器标题: " + title, GlobalUtil.LogLevel.DEBUG)
+	if description_label:
+		description_label.text = desc
+		GlobalUtil.log("设置容器描述: " + desc, GlobalUtil.LogLevel.DEBUG)
+	
+	# 更新容器显示
+	update_display()
+
 # 静态方法：移除当前容器
 static func remove_current_container():
 	if current_container != null:
@@ -202,8 +262,8 @@ static func get_container_pack_by_type(type: String) -> ContainerBase:
 			GlobalUtil.log("未知的容器类型: " + type, GlobalUtil.LogLevel.ERROR)
 			return null
 
-# 处理输入事件（使用_unhandled_input确保在UI元素和卡牌拖拽处理后执行）
-func _unhandled_input(event):
+# 处理输入事件（使用普通input处理方式）
+func _input(event):
 	# 检查是否点击了鼠标左键（按下时）
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		# 获取鼠标位置
@@ -214,23 +274,8 @@ func _unhandled_input(event):
 			Vector2(container_width, container_height)
 		)
 		GlobalUtil.log("容器点击检测 - 鼠标位置: " + str(mouse_pos) + ", 容器矩形: " + str(container_rect), GlobalUtil.LogLevel.DEBUG)
-		if container_rect.has_point(mouse_pos):
-			# 点击了容器内部，检查是否有卡牌在此位置
-			var has_card_at_position = _check_card_at_position(mouse_pos)
-			if has_card_at_position:
-				# 容器内有卡牌，完全不处理事件，让卡牌正常接收
-				GlobalUtil.log("点击了容器内部的卡牌，让卡牌处理事件", GlobalUtil.LogLevel.DEBUG)
-				# 不拦截事件，让事件继续传播到卡牌
-				pass
-			else:
-				# 点击了容器内部的空白区域，保持容器显示
-				GlobalUtil.log("点击了容器内部空白区域，保持容器显示", GlobalUtil.LogLevel.DEBUG)
-				GlobalUtil.log(str(container_width) + "x" + str(container_height) + "容器被点击，容器实例ID: " + str(get_instance_id()), GlobalUtil.LogLevel.INFO)
-				# 只有点击空白区域时才拦截事件
-				get_viewport().set_input_as_handled()
-				return
-		else:
-			# 检查是否点击了召唤此容器的卡牌
+		if not container_rect.has_point(mouse_pos):
+			# 点击了容器外部，检查是否点击了召唤此容器的卡牌
 			var clicked_summoner = _check_summoner_card_clicked(mouse_pos)
 			
 			# 检查鼠标下是否有其他可拖拽的卡牌或UI元素
@@ -357,8 +402,8 @@ func _check_control_at_position(node: Node, pos: Vector2) -> bool:
 	
 	return false
 
-# 注释：移除_input方法，避免与卡牌拖拽冲突
-# 只使用_unhandled_input来处理容器点击，确保卡牌拖拽优先级更高
+# 注释：使用_input方法处理容器点击，通过Area2D的input_event处理容器内部点击
+# 使用_input方法处理容器外部点击，确保正确的事件处理优先级
 
 # 检查是否点击了召唤此容器的卡牌
 func _check_summoner_card_clicked(pos: Vector2) -> bool:

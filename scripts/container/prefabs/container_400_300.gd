@@ -3,6 +3,10 @@ class_name Container400x300Pack
 
 # 400x300尺寸的容器包
 
+# 容器内容属性
+var title_text: String = "标题"
+var description_text: String = "描述"
+
 func _init():
 	# 调用父类初始化
 	super._init("400x300容器", "标准尺寸的容器，适用于大部分场景")
@@ -15,6 +19,12 @@ func _init():
 	on_click = container_400_300_click_effect
 	
 	GlobalUtil.log("创建400x300容器包实例", GlobalUtil.LogLevel.DEBUG)
+
+# 设置容器标题和描述
+func set_title_and_description(title: String, desc: String):
+	title_text = title
+	description_text = desc
+	GlobalUtil.log("设置容器标题: " + title + ", 描述: " + desc, GlobalUtil.LogLevel.DEBUG)
 
 # 400x300容器的特有点击效果
 func container_400_300_click_effect(container_instance):
