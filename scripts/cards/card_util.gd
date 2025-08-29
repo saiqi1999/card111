@@ -23,11 +23,21 @@ var drag_offset: Vector2 = Vector2.ZERO
 var active_tween: Tween = null
 # 鼠标按下时的位置，用于判断是否为拖动
 var mouse_press_position: Vector2 = Vector2.ZERO
+# 连带拖拽的卡牌列表（当拖拽堆叠中间或底层卡牌时）
+var dragging_cards: Array[Node2D] = []
+# 标记是否已经调用了bring_to_front()，避免重复调用
+var has_brought_to_front: bool = false
 
 # 卡牌层级管理
 static var card_layer_counter: int = 0  # 全局层级计数器
 var card_layer: int = 0  # 当前卡牌的层级
 static var all_cards: Array[Node2D] = []  # 所有卡牌实例的引用
+
+# 卡牌堆叠系统
+static var card_stacks: Dictionary = {}  # 卡牌堆叠状态管理 {stack_id: [card1, card2, ...]}
+static var card_to_stack: Dictionary = {}  # 卡牌到堆叠的映射 {card_instance_id: stack_id}
+static var stack_id_counter: int = 0  # 堆叠ID计数器
+var stack_id: int = -1  # 当前卡牌所属的堆叠ID，-1表示不在任何堆叠中
 
 # 卡牌池系统（使用全局常量）
 static var card_pool: Array[Node2D] = []  # 预加载的卡牌池
@@ -107,16 +117,18 @@ func is_top_card_at_position(mouse_pos: Vector2) -> bool:
 	# 返回当前卡牌是否是最上层的
 	return top_card == self
 
-# 清理无效的卡牌引用（静态函数）
+# 清理无效的卡牌引用
 static func cleanup_invalid_cards():
 	var valid_cards: Array[Node2D] = []
-	
 	for card in all_cards:
 		if card != null and is_instance_valid(card):
 			valid_cards.append(card)
-	
 	all_cards = valid_cards
-	GlobalUtil.log("清理无效卡牌引用，当前有效卡牌数量:" + str(all_cards.size()), GlobalUtil.LogLevel.DEBUG)
+	
+	# 清理堆叠系统中的无效引用
+	cleanup_invalid_stacks()
+	
+	GlobalUtil.log("清理无效卡牌引用，当前有效卡牌数量: " + str(all_cards.size()), GlobalUtil.LogLevel.DEBUG)
 
 # 获取所有卡牌的调试信息（静态函数）
 static func get_all_cards_debug_info() -> String:
@@ -154,6 +166,8 @@ func _ready():
 
 # 当节点退出场景树时调用
 func _exit_tree():
+	# 从堆叠系统中移除
+	remove_from_current_stack()
 	# 注销卡牌
 	unregister_card()
 
@@ -412,9 +426,6 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 			# 记录鼠标按下时的位置
 			mouse_press_position = get_global_mouse_position()
 			
-			# 将当前卡牌移动到最上层
-			bring_to_front()
-			
 			# 停止当前活动的Tween动画，避免与拖拽冲突
 			if active_tween != null and active_tween.is_valid():
 				active_tween.kill()
@@ -423,9 +434,21 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 			
 			# 开始拖拽
 			is_dragging = true
+			has_brought_to_front = false  # 重置bring_to_front标志
 			drag_offset = global_position - get_global_mouse_position()
 			modulate.a = GlobalConstants.CARD_DRAG_ALPHA  # 拖拽时半透明效果
-			GlobalUtil.log("开始拖拽卡牌，偏移量:" + str(drag_offset), GlobalUtil.LogLevel.DEBUG)
+			
+			# 获取需要连带拖拽的卡牌（当前卡牌上方的所有卡牌）
+			dragging_cards = get_cards_above()
+			
+			# 为连带拖拽的卡牌设置半透明效果和记录相对位置
+			for card in dragging_cards:
+				if card != null and is_instance_valid(card):
+					card.modulate.a = GlobalConstants.CARD_DRAG_ALPHA
+					# 记录相对于主拖拽卡牌的偏移量
+					card.drag_offset = card.global_position - global_position
+			
+			GlobalUtil.log("开始拖拽卡牌，偏移量:" + str(drag_offset) + "，连带卡牌数量:" + str(dragging_cards.size()), GlobalUtil.LogLevel.DEBUG)
 
 
 # 全局输入处理，用于处理拖拽时的鼠标释放事件
@@ -453,17 +476,46 @@ func _input(event):
 			print_card_info()
 		else:
 			GlobalUtil.log("检测到拖动行为，不触发点击效果", GlobalUtil.LogLevel.DEBUG)
+			# 检查是否可以堆叠到其他卡牌上
+			check_and_stack_card()
 		
 		# 结束拖拽
 		is_dragging = false
 		modulate.a = GlobalConstants.CARD_NORMAL_ALPHA  # 恢复透明度
-		GlobalUtil.log("卡牌拖拽结束，最终位置:" + str(global_position), GlobalUtil.LogLevel.DEBUG)
+		
+		# 恢复连带拖拽卡牌的透明度
+		for card in dragging_cards:
+			if card != null and is_instance_valid(card):
+				card.modulate.a = GlobalConstants.CARD_NORMAL_ALPHA
+		
+		GlobalUtil.log("卡牌拖拽结束，最终位置:" + str(global_position) + "，连带卡牌数量:" + str(dragging_cards.size()), GlobalUtil.LogLevel.DEBUG)
 
 # 每帧更新，用于处理拖拽时的位置跟随
 func _process(_delta):
 	# 如果正在拖拽，更新卡牌位置跟随鼠标
 	if is_dragging:
+		# 检查是否已经移动了足够的距离，如果是则将卡牌组移到最前面
+		if not has_brought_to_front:
+			var current_mouse_pos = get_global_mouse_position()
+			var drag_distance = mouse_press_position.distance_to(current_mouse_pos)
+			if drag_distance >= GlobalConstants.DRAG_THRESHOLD:
+				# 确认是拖动行为，将主卡牌移到最前面
+				bring_to_front()
+				
+				# 将所有连带拖拽的卡牌依次移到最前面
+				for card in dragging_cards:
+					if card != null and is_instance_valid(card):
+						card.bring_to_front()
+				
+				has_brought_to_front = true
+				GlobalUtil.log("检测到拖动行为，将卡牌组移到最前面，主卡牌+连带卡牌数量:" + str(1 + dragging_cards.size()), GlobalUtil.LogLevel.DEBUG)
+		
 		global_position = get_global_mouse_position() + drag_offset
+		
+		# 更新连带拖拽卡牌的位置
+		for card in dragging_cards:
+			if card != null and is_instance_valid(card):
+				card.global_position = global_position + card.drag_offset
 
 # 鼠标进入事件（调试用）
 func _on_mouse_entered():
@@ -596,3 +648,317 @@ static func get_card_pool_info() -> String:
 	info += "隐藏位置: " + str(hidden_position) + "\n"
 	info += "================\n"
 	return info
+
+# ==================== 卡牌堆叠系统 ====================
+
+# 检查并尝试将当前卡牌堆叠到其他卡牌上
+func check_and_stack_card():
+	var current_pos = global_position
+	var target_card = find_stackable_card_at_position(current_pos)
+	
+	if target_card != null and target_card != self:
+		GlobalUtil.log("找到可堆叠的目标卡牌: " + target_card.card_name, GlobalUtil.LogLevel.DEBUG)
+		stack_card_group_on_target(target_card)
+	else:
+		GlobalUtil.log("未找到可堆叠的目标卡牌", GlobalUtil.LogLevel.DEBUG)
+		# 如果没有找到目标卡牌，检查是否有连带拖拽的卡牌
+		if dragging_cards.size() > 0:
+			# 创建新的堆叠
+			create_new_stack_with_cards()
+		else:
+			# 如果只是单张卡牌，移除原有堆叠关系
+			remove_from_current_stack()
+	
+	# 清空连带拖拽卡牌列表
+	dragging_cards.clear()
+
+# 在指定位置查找可以堆叠的卡牌
+func find_stackable_card_at_position(pos: Vector2) -> Node2D:
+	var closest_card: Node2D = null
+	var closest_distance: float = GlobalConstants.CARD_STACK_DETECTION_RANGE
+	
+	for card in all_cards:
+		if card == null or not is_instance_valid(card) or card == self:
+			continue
+		
+		# 排除连带拖拽的卡牌
+		if card in dragging_cards:
+			continue
+		
+		# 计算卡牌中心之间的距离
+		var distance = pos.distance_to(card.global_position)
+		
+		# 如果在检测范围内且距离更近
+		if distance < closest_distance:
+			closest_distance = distance
+			closest_card = card
+	
+	return closest_card
+
+# 将当前卡牌堆叠到目标卡牌上
+func stack_card_on_target(target_card: Node2D):
+	var target_instance_id = target_card.get_instance_id()
+	var current_instance_id = get_instance_id()
+	
+	# 移除当前卡牌的旧堆叠关系
+	remove_from_current_stack()
+	
+	# 获取或创建目标卡牌的堆叠
+	var target_stack_id = get_or_create_stack_for_card(target_card)
+	
+	# 将当前卡牌添加到堆叠中
+	card_stacks[target_stack_id].append(self)
+	card_to_stack[current_instance_id] = target_stack_id
+	stack_id = target_stack_id
+	
+	# 更新堆叠中所有卡牌的位置
+	update_stack_positions(target_stack_id)
+	
+	GlobalUtil.log("卡牌 " + card_name + " 已堆叠到 " + target_card.card_name + " 上，堆叠ID: " + str(target_stack_id), GlobalUtil.LogLevel.INFO)
+
+# 将卡牌组（主卡牌和连带卡牌）堆叠到目标卡牌上
+func stack_card_group_on_target(target_card: Node2D):
+	# 获取或创建目标卡牌的堆叠
+	var target_stack_id = get_or_create_stack_for_card(target_card)
+	
+	# 首先处理主卡牌
+	remove_from_current_stack()
+	
+	# 确保目标堆叠仍然存在（可能在remove_from_current_stack中被删除）
+	if not target_stack_id in card_stacks:
+		# 重新创建目标堆叠
+		target_stack_id = get_or_create_stack_for_card(target_card)
+	
+	card_stacks[target_stack_id].append(self)
+	card_to_stack[get_instance_id()] = target_stack_id
+	stack_id = target_stack_id
+	
+	# 然后处理连带拖拽的卡牌
+	for card in dragging_cards:
+		if card != null and is_instance_valid(card):
+			# 移除连带卡牌的旧堆叠关系
+			card.remove_from_current_stack()
+			
+			# 确保目标堆叠仍然存在
+			if not target_stack_id in card_stacks:
+				target_stack_id = get_or_create_stack_for_card(target_card)
+			
+			# 添加到目标堆叠
+			card_stacks[target_stack_id].append(card)
+			card_to_stack[card.get_instance_id()] = target_stack_id
+			card.stack_id = target_stack_id
+	
+	# 更新堆叠中所有卡牌的位置
+	update_stack_positions(target_stack_id)
+	
+	GlobalUtil.log("卡牌组已堆叠到 " + target_card.card_name + " 上，主卡牌: " + card_name + "，连带卡牌数: " + str(dragging_cards.size()), GlobalUtil.LogLevel.INFO)
+
+# 创建新的堆叠包含主卡牌和连带卡牌
+func create_new_stack_with_cards():
+	# 移除主卡牌的旧堆叠关系
+	remove_from_current_stack()
+	
+	# 创建新堆叠
+	var new_stack_id = stack_id_counter
+	stack_id_counter += 1
+	
+	# 初始化堆叠，主卡牌作为底牌
+	card_stacks[new_stack_id] = [self]
+	card_to_stack[get_instance_id()] = new_stack_id
+	stack_id = new_stack_id
+	
+	# 添加连带拖拽的卡牌
+	for card in dragging_cards:
+		if card != null and is_instance_valid(card):
+			# 移除连带卡牌的旧堆叠关系
+			card.remove_from_current_stack()
+			# 添加到新堆叠
+			card_stacks[new_stack_id].append(card)
+			card_to_stack[card.get_instance_id()] = new_stack_id
+			card.stack_id = new_stack_id
+	
+	# 更新堆叠中所有卡牌的位置
+	update_stack_positions(new_stack_id)
+	
+	GlobalUtil.log("创建新堆叠，ID: " + str(new_stack_id) + "，主卡牌: " + card_name + "，连带卡牌数: " + str(dragging_cards.size()), GlobalUtil.LogLevel.INFO)
+
+# 获取或创建卡牌的堆叠ID
+static func get_or_create_stack_for_card(card: Node2D) -> int:
+	var card_instance_id = card.get_instance_id()
+	
+	# 如果卡牌已经在堆叠中，返回其堆叠ID
+	if card_instance_id in card_to_stack:
+		return card_to_stack[card_instance_id]
+	
+	# 创建新的堆叠
+	var new_stack_id = stack_id_counter
+	stack_id_counter += 1
+	
+	# 初始化堆叠
+	card_stacks[new_stack_id] = [card]
+	card_to_stack[card_instance_id] = new_stack_id
+	card.stack_id = new_stack_id
+	
+	GlobalUtil.log("为卡牌 " + card.card_name + " 创建新堆叠，ID: " + str(new_stack_id), GlobalUtil.LogLevel.DEBUG)
+	return new_stack_id
+
+# 从当前堆叠中移除卡牌
+func remove_from_current_stack():
+	var current_instance_id = get_instance_id()
+	
+	# 如果不在任何堆叠中，直接返回
+	if not current_instance_id in card_to_stack:
+		return
+	
+	var old_stack_id = card_to_stack[current_instance_id]
+	
+	# 从堆叠中移除当前卡牌
+	if old_stack_id in card_stacks:
+		card_stacks[old_stack_id].erase(self)
+		
+		# 检查堆叠剩余卡牌数量
+		var remaining_cards = card_stacks[old_stack_id]
+		if remaining_cards.size() == 0:
+			# 堆叠为空，删除堆叠
+			card_stacks.erase(old_stack_id)
+			GlobalUtil.log("删除空堆叠，ID: " + str(old_stack_id), GlobalUtil.LogLevel.DEBUG)
+		elif remaining_cards.size() == 1:
+			# 只剩一张卡牌，清除整个堆叠
+			var last_card = remaining_cards[0]
+			if last_card != null and is_instance_valid(last_card):
+				# 移除最后一张卡牌的堆叠映射
+				var last_card_id = last_card.get_instance_id()
+				card_to_stack.erase(last_card_id)
+				last_card.stack_id = -1
+				GlobalUtil.log("卡牌 " + last_card.card_name + " 不再属于任何堆叠", GlobalUtil.LogLevel.DEBUG)
+			
+			# 删除堆叠
+			card_stacks.erase(old_stack_id)
+			GlobalUtil.log("堆叠只剩一张卡牌，清除堆叠，ID: " + str(old_stack_id), GlobalUtil.LogLevel.DEBUG)
+		else:
+			# 多张卡牌，更新剩余卡牌的位置
+			update_stack_positions(old_stack_id)
+	
+	# 移除当前卡牌的映射关系
+	card_to_stack.erase(current_instance_id)
+	stack_id = -1
+	
+	GlobalUtil.log("卡牌 " + card_name + " 已从堆叠 " + str(old_stack_id) + " 中移除", GlobalUtil.LogLevel.DEBUG)
+
+# 更新堆叠中所有卡牌的位置
+static func update_stack_positions(stack_id: int):
+	if not stack_id in card_stacks:
+		return
+	
+	var stack = card_stacks[stack_id]
+	if stack.size() == 0:
+		return
+	
+	# 底部卡牌保持原位置
+	var base_card = stack[0]
+	var base_position = base_card.global_position
+	
+	# 更新堆叠中每张卡牌的位置和层级
+	for i in range(stack.size()):
+		var card = stack[i]
+		if card == null or not is_instance_valid(card):
+			continue
+		
+		# 计算位置偏移
+		var offset_y = i * GlobalConstants.CARD_STACK_OFFSET
+		card.global_position = base_position + Vector2(0, offset_y)
+		
+		# 更新层级，确保上层卡牌在前面
+		card.bring_to_front()
+		
+		GlobalUtil.log("更新堆叠卡牌位置: " + card.card_name + " 位置: " + str(card.global_position), GlobalUtil.LogLevel.DEBUG)
+
+# 获取堆叠系统调试信息
+static func get_stack_debug_info() -> String:
+	var info = "=== 卡牌堆叠状态 ===\n"
+	info += "堆叠总数: " + str(card_stacks.size()) + "\n"
+	info += "卡牌映射数: " + str(card_to_stack.size()) + "\n"
+	
+	for stack_id in card_stacks.keys():
+		var stack = card_stacks[stack_id]
+		info += "堆叠 " + str(stack_id) + ": " + str(stack.size()) + " 张卡牌\n"
+		for i in range(stack.size()):
+			var card = stack[i]
+			if card != null and is_instance_valid(card):
+				info += "  [" + str(i) + "] " + card.card_name + "\n"
+	
+	info += "==================\n"
+	return info
+
+# 清理无效的堆叠引用
+static func cleanup_invalid_stacks():
+	var stacks_to_remove: Array[int] = []
+	var mappings_to_remove: Array[Node2D] = []
+	
+	# 检查堆叠中的无效卡牌
+	for stack_id in card_stacks.keys():
+		var stack = card_stacks[stack_id]
+		var valid_cards: Array[Node2D] = []
+		
+		for card in stack:
+			if card != null and is_instance_valid(card):
+				valid_cards.append(card)
+		
+		# 更新堆叠或标记删除
+		if valid_cards.size() == 0:
+			stacks_to_remove.append(stack_id)
+		else:
+			card_stacks[stack_id] = valid_cards
+	
+	# 检查映射中的无效卡牌
+	for instance_id in card_to_stack.keys():
+		var found = false
+		for card in all_cards:
+			if card != null and is_instance_valid(card) and card.get_instance_id() == instance_id:
+				found = true
+				break
+		
+		if not found:
+			mappings_to_remove.append(instance_id)
+	
+	# 移除无效的堆叠和映射
+	for stack_id in stacks_to_remove:
+		card_stacks.erase(stack_id)
+	
+	for instance_id in mappings_to_remove:
+		card_to_stack.erase(instance_id)
+	
+	GlobalUtil.log("清理堆叠系统: 移除 " + str(stacks_to_remove.size()) + " 个无效堆叠, " + str(mappings_to_remove.size()) + " 个无效映射", GlobalUtil.LogLevel.DEBUG)
+
+# 获取当前卡牌上方的所有卡牌（用于连带拖拽）
+func get_cards_above() -> Array[Node2D]:
+	var cards_above: Array[Node2D] = []
+	var current_instance_id = get_instance_id()
+	
+	# 如果当前卡牌不在任何堆叠中，返回空数组
+	if not current_instance_id in card_to_stack:
+		return cards_above
+	
+	var current_stack_id = card_to_stack[current_instance_id]
+	
+	# 如果堆叠不存在，返回空数组
+	if not current_stack_id in card_stacks:
+		return cards_above
+	
+	var stack = card_stacks[current_stack_id]
+	var current_index = -1
+	
+	# 找到当前卡牌在堆叠中的位置
+	for i in range(stack.size()):
+		if stack[i] == self:
+			current_index = i
+			break
+	
+	# 如果找到了当前卡牌的位置，获取其上方的所有卡牌
+	if current_index >= 0:
+		for i in range(current_index + 1, stack.size()):
+			if stack[i] != null and is_instance_valid(stack[i]):
+				cards_above.append(stack[i])
+	
+	GlobalUtil.log("获取到 " + str(cards_above.size()) + " 张上方卡牌", GlobalUtil.LogLevel.DEBUG)
+	return cards_above

@@ -36,6 +36,11 @@ const OVERLAP_OFFSET: Vector2 = Vector2(20, 15)  # 重叠偏移量
 # 拖拽相关常量
 const DRAG_THRESHOLD: float = 10.0  # 拖动距离阈值（像素）
 
+# 卡牌堆叠相关常量
+const CARD_STACK_OFFSET_RATIO: float = 0.06  # 堆叠偏移比例（相对于卡牌长度）
+const CARD_STACK_OFFSET: float = CARD_HEIGHT * CARD_STACK_OFFSET_RATIO  # 堆叠偏移量（18像素）
+const CARD_STACK_DETECTION_RANGE: float = 0.8 * CARD_WIDTH  # 堆叠检测范围（像素）
+
 # 控制器相关常量
 const CTRL_UNIT: float = 100.0  # 控制器基础单位
 const CTRL_WIDTH_RATIO: float = 4.0  # 控制器宽度比例
@@ -84,6 +89,9 @@ static func get_all_constants() -> Dictionary:
 		"OVERLAP_TEST_COUNT": OVERLAP_TEST_COUNT,
 		"OVERLAP_OFFSET": OVERLAP_OFFSET,
 		"DRAG_THRESHOLD": DRAG_THRESHOLD,
+		"CARD_STACK_OFFSET_RATIO": CARD_STACK_OFFSET_RATIO,
+		"CARD_STACK_OFFSET": CARD_STACK_OFFSET,
+		"CARD_STACK_DETECTION_RANGE": CARD_STACK_DETECTION_RANGE,
 		"CTRL_UNIT": CTRL_UNIT,
 		"CTRL_WIDTH_RATIO": CTRL_WIDTH_RATIO,
 		"CTRL_HEIGHT_RATIO": CTRL_HEIGHT_RATIO,
