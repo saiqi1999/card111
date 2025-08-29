@@ -25,6 +25,9 @@ func _ready() -> void:
 	# 输出调试信息
 	GlobalUtil.log("全局工具已加载", GlobalUtil.LogLevel.INFO)
 	
+	# 初始化屏幕分辨率
+	GlobalUtil.update_screen_size_from_viewport(get_viewport())
+	
 	# 测试全局工具方法
 	var current_time = global_util.get_timestamp()
 	GlobalUtil.log("当前时间戳: " + str(current_time), GlobalUtil.LogLevel.DEBUG)

@@ -6,6 +6,9 @@ class_name GlobalUtil
 # 日志开关，控制是否输出日志
 static var log_enabled: bool = true
 
+# 当前屏幕分辨率
+static var current_screen_size: Vector2 = Vector2.ZERO
+
 # 日志级别枚举
 enum LogLevel {
 	DEBUG,
@@ -67,3 +70,20 @@ func format_time(seconds: int) -> String:
 	var minutes = seconds / 60
 	var remaining_seconds = seconds % 60
 	return "%d:%02d" % [minutes, remaining_seconds]
+
+# 设置当前屏幕分辨率
+static func set_screen_size(size: Vector2) -> void:
+	current_screen_size = size
+	GlobalUtil.log("屏幕分辨率已更新: " + str(size), GlobalUtil.LogLevel.DEBUG)
+
+# 获取当前屏幕分辨率
+static func get_screen_size() -> Vector2:
+	return current_screen_size
+
+# 更新屏幕分辨率（从视口获取）
+static func update_screen_size_from_viewport(viewport: Viewport) -> void:
+	if viewport:
+		var size = viewport.get_visible_rect().size
+		set_screen_size(size)
+	else:
+		GlobalUtil.log("无法更新屏幕分辨率 - viewport为空", GlobalUtil.LogLevel.WARNING)

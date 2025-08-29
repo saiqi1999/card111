@@ -15,13 +15,70 @@ func _init():
 	
 	GlobalUtil.log("创建小容器实例", GlobalUtil.LogLevel.DEBUG)
 
-# 设置小控制器布局
+# 设置小控制器布局（覆盖父类方法，固定在左下角，根据屏幕分辨率缩放）
 func setup_ctrl_layout():
-	# 调用父类的默认布局（左下角，三分之一屏幕）
-	super.setup_ctrl_layout()
+	# 获取屏幕尺寸
+	var screen_size = GlobalUtil.get_screen_size()
+	if screen_size == Vector2.ZERO:
+		screen_size = get_viewport().get_visible_rect().size
 	
-	# 可以在这里添加小容器特有的布局调整
-	GlobalUtil.log("小容器布局设置完成", GlobalUtil.LogLevel.DEBUG)
+	# 计算控制器尺寸为屏幕的四分之一
+	var ctrl_width = screen_size.x / 4.0
+	var ctrl_height = screen_size.y / 4.0
+	
+	# 设置控制器尺寸
+	size = Vector2(ctrl_width, ctrl_height)
+	
+	# 计算左下角位置（距离边缘100px）
+	var ctrl_position = Vector2(
+		100.0,  # 距离左边缘100px
+		screen_size.y - ctrl_height - 100.0  # 距离底边缘100px
+	)
+	
+	# 设置位置
+	position = ctrl_position
+	
+	# 设置锚点为左上角（使用绝对位置）
+	anchor_left = 0.0
+	anchor_top = 0.0
+	anchor_right = 0.0
+	anchor_bottom = 0.0
+	
+	# 设置偏移量
+	offset_left = ctrl_position.x
+	offset_top = ctrl_position.y
+	offset_right = ctrl_position.x + ctrl_width
+	offset_bottom = ctrl_position.y + ctrl_height
+	
+	# 设置背景面板的尺寸和位置
+	if background_panel:
+		background_panel.size = Vector2(ctrl_width, ctrl_height)
+		background_panel.position = Vector2.ZERO
+		background_panel.z_index = GlobalConstants.CTRL_Z_INDEX
+		background_panel.anchor_left = 0.0
+		background_panel.anchor_top = 0.0
+		background_panel.anchor_right = 1.0
+		background_panel.anchor_bottom = 1.0
+		background_panel.offset_left = 0
+		background_panel.offset_top = 0
+		background_panel.offset_right = 0
+		background_panel.offset_bottom = 0
+	
+	# 设置标题标签的位置和尺寸
+	if title_label:
+		title_label.size = Vector2(ctrl_width, 50)
+		title_label.position = Vector2(10, 10)
+		title_label.z_index = GlobalConstants.CTRL_TITLE_Z_INDEX
+		title_label.add_theme_font_size_override("font_size", 18)
+	
+	# 设置描述标签的位置和尺寸
+	if description_label:
+		description_label.size = Vector2(ctrl_width - 20, ctrl_height - 80)
+		description_label.position = Vector2(10, 70)
+		description_label.z_index = GlobalConstants.CTRL_TITLE_Z_INDEX
+		description_label.add_theme_font_size_override("font_size", 14)
+	
+	GlobalUtil.log("小容器布局设置完成（左下角定位，屏幕四分之一缩放），尺寸: " + str(size) + ", 位置: " + str(position) + ", 屏幕尺寸: " + str(screen_size), GlobalUtil.LogLevel.DEBUG)
 
 # 设置小控制器标题和描述
 func set_title_and_description(title: String, desc: String):
