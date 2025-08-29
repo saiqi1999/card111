@@ -51,9 +51,9 @@
 - `DEFAULT_LOG_ENABLED`: 默认日志开关状态（true）
 
 #### 容器层级常量
-- `CONTAINER_Z_INDEX`: 容器主体层级（10000000）
-- `CONTAINER_TITLE_Z_INDEX`: 容器标题层级（10000015）
-- `CONTAINER_UI_Z_INDEX`: 容器UI元素层级（10000020）
+- `CTRL_Z_INDEX`: 控制器主体层级（10000000）
+- `CTRL_TITLE_Z_INDEX`: 控制器标题层级（10000015）
+- `CTRL_UI_Z_INDEX`: 控制器UI元素层级（10000020）
 
 ### global_util_loader.gd
 

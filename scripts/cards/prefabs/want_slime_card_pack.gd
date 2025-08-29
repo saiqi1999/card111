@@ -19,11 +19,11 @@ func _init():
 # 参数: card_instance - 触发点击的卡牌实例
 func want_slime_click_effect(card_instance):
 	# 获取容器工具类的引用（用于静态方法调用）
-	var container_util_class = preload("res://scripts/container/container_util.gd")
+	var ctrl_util_class = preload("res://scripts/ctrl/ctrl_util.gd")
 	
-	# 如果已经存在容器，先移除（确保场上只能存在一个容器）
-	if container_util_class.has_container():
-		container_util_class.remove_current_container()
+	# 检查是否已有控制器存在，如果有则移除
+	if ctrl_util_class.has_ctrl():
+		ctrl_util_class.remove_current_ctrl()
 		# 等待一帧确保容器完全移除
 		await card_instance.get_tree().process_frame
 	
@@ -31,32 +31,27 @@ func want_slime_click_effect(card_instance):
 	var card_position = card_instance.global_position
 	GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " 卡牌位置: " + str(card_position), GlobalUtil.LogLevel.INFO)
 	
-	# 创建容器实例
-	var container_instance = preload("res://scripts/container/container_util.gd").new()
+	# 创建控制器实例
+	var ctrl_instance = preload("res://scripts/ctrl/ctrl_util.gd").new()
 	
-	# 从容器类型加载容器数据
-	container_instance.load_from_container_type("1200x1000")
+	# 从控制器类型加载控制器数据（改为小控制器）
+	ctrl_instance.load_from_ctrl_type("400x300")
 	
-	# 设置容器位置（在卡牌左侧，向左移动两个卡牌宽度）
-	var container_position = Vector2(card_position.x - 220 - 2*GlobalConstants.CARD_WIDTH - GlobalConstants.CARD_WIDTH, card_position.y)
-	container_instance.global_position = container_position
+	# Control实现的容器会自动布局到左下角，无需手动设置位置
 	
-	# 设置召唤此容器的卡牌引用
-	container_instance.set_summoner_card(card_instance)
+	# 将控制器添加到场景树中（这会触发_ready方法，初始化UI组件）
+	card_instance.get_tree().current_scene.add_child(ctrl_instance)
 	
-	# 将容器添加到场景树中（这会触发_ready方法，初始化UI组件）
-	card_instance.get_tree().current_scene.add_child(container_instance)
-	
-	# 等待一帧确保容器完全初始化
+	# 等待一帧确保控制器完全初始化
 	await card_instance.get_tree().process_frame
 	
-	# 设置容器的标题和描述（使用召唤卡牌的card_base属性）
+	# 设置控制器的标题和描述（使用召唤卡牌的card_base属性）
 	var card_title = card_instance.card_name if card_instance.card_name else "Want Slime"
 	var card_desc = card_instance.description if card_instance.description else "召唤一只可爱的史莱姆"
-	container_instance.set_title_and_description_ui(card_title, card_desc)
+	ctrl_instance.set_ctrl_title_and_description(card_title, card_desc)
 	GlobalUtil.log("设置容器标题和描述 - 标题: " + card_title + ", 描述: " + card_desc, GlobalUtil.LogLevel.DEBUG)
 	
 	# 生成史莱姆数据
 	var slime_hp = randi() % 10 + 5  # 生成5-14的随机生命值
 	var slime_attack = randi() % 3 + 1  # 生成1-3的随机攻击力
-	GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " Want Slime卡牌特效触发！召唤史莱姆 - 生命值: " + str(slime_hp) + ", 攻击力: " + str(slime_attack) + ", 容器位置: " + str(container_position), GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " Want Slime卡牌特效触发！召唤史莱姆 - 生命值: " + str(slime_hp) + ", 攻击力: " + str(slime_attack), GlobalUtil.LogLevel.INFO)

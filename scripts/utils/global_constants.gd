@@ -36,18 +36,16 @@ const OVERLAP_OFFSET: Vector2 = Vector2(20, 15)  # 重叠偏移量
 # 拖拽相关常量
 const DRAG_THRESHOLD: float = 10.0  # 拖动距离阈值（像素）
 
-# 容器相关常量
-const CONTAINER_UNIT: float = 100.0  # 容器基础单位
-const CONTAINER_WIDTH_RATIO: float = 4.0  # 容器宽度比例
-const CONTAINER_HEIGHT_RATIO: float = 3.0  # 容器高度比例
-const CONTAINER_WIDTH: float = CONTAINER_UNIT * CONTAINER_WIDTH_RATIO  # 容器宽度（400）
-const CONTAINER_HEIGHT: float = CONTAINER_UNIT * CONTAINER_HEIGHT_RATIO  # 容器高度（300）
+# 控制器相关常量
+const CTRL_UNIT: float = 100.0  # 控制器基础单位
+const CTRL_WIDTH_RATIO: float = 4.0  # 控制器宽度比例
+const CTRL_HEIGHT_RATIO: float = 3.0  # 控制器高度比例
+const CTRL_WIDTH: float = CTRL_UNIT * CTRL_WIDTH_RATIO  # 控制器宽度（400）
+const CTRL_HEIGHT: float = CTRL_UNIT * CTRL_HEIGHT_RATIO  # 控制器高度（300）
 
-# 大容器相关常量
-const CONTAINER_BIG_WIDTH_RATIO: float = 12.0  # 大容器宽度比例
-const CONTAINER_BIG_HEIGHT_RATIO: float = 10.0  # 大容器高度比例
-const CONTAINER_BIG_WIDTH: float = CONTAINER_UNIT * CONTAINER_BIG_WIDTH_RATIO  # 大容器宽度（1200）
-const CONTAINER_BIG_HEIGHT: float = CONTAINER_UNIT * CONTAINER_BIG_HEIGHT_RATIO  # 大容器高度（1000）
+# 小控制器UI布局常量
+const CTRL_MARGIN: float = 100.0  # 控制器边缘距离
+const CTRL_SIZE_RATIO: float = 1.0 / 3.0  # 控制器占屏幕的比例（三分之一）
 
 # UI布局相关常量
 const UI_UNIT: float = 20.0  # UI基础单位
@@ -61,10 +59,10 @@ const UI_SPACING_LARGE: float = UI_UNIT * 2.0  # 大间距（40）
 const UI_TITLE_FONT_SIZE: int = 24  # 标题字体大小
 const UI_NORMAL_FONT_SIZE: int = 16  # 普通字体大小
 
-# 容器层级常量
-const CONTAINER_Z_INDEX: int = 1000  # 容器基础z_index
-const CONTAINER_UI_Z_INDEX: int = 1020  # 容器UI元素z_index
-const CONTAINER_TITLE_Z_INDEX: int = 1015  # 容器标题z_index
+# 控制器层级常量
+const CTRL_Z_INDEX: int = 1000  # 控制器基础z_index
+const CTRL_UI_Z_INDEX: int = 1020  # 控制器UI元素z_index
+const CTRL_TITLE_Z_INDEX: int = 1015  # 控制器标题z_index
 
 # 获取所有常量的字典表示（用于调试）
 static func get_all_constants() -> Dictionary:
@@ -86,15 +84,13 @@ static func get_all_constants() -> Dictionary:
 		"OVERLAP_TEST_COUNT": OVERLAP_TEST_COUNT,
 		"OVERLAP_OFFSET": OVERLAP_OFFSET,
 		"DRAG_THRESHOLD": DRAG_THRESHOLD,
-		"CONTAINER_UNIT": CONTAINER_UNIT,
-		"CONTAINER_WIDTH_RATIO": CONTAINER_WIDTH_RATIO,
-		"CONTAINER_HEIGHT_RATIO": CONTAINER_HEIGHT_RATIO,
-		"CONTAINER_WIDTH": CONTAINER_WIDTH,
-		"CONTAINER_HEIGHT": CONTAINER_HEIGHT,
-		"CONTAINER_BIG_WIDTH_RATIO": CONTAINER_BIG_WIDTH_RATIO,
-		"CONTAINER_BIG_HEIGHT_RATIO": CONTAINER_BIG_HEIGHT_RATIO,
-		"CONTAINER_BIG_WIDTH": CONTAINER_BIG_WIDTH,
-		"CONTAINER_BIG_HEIGHT": CONTAINER_BIG_HEIGHT,
+		"CTRL_UNIT": CTRL_UNIT,
+		"CTRL_WIDTH_RATIO": CTRL_WIDTH_RATIO,
+		"CTRL_HEIGHT_RATIO": CTRL_HEIGHT_RATIO,
+		"CTRL_WIDTH": CTRL_WIDTH,
+		"CTRL_HEIGHT": CTRL_HEIGHT,
+		"CTRL_MARGIN": CTRL_MARGIN,
+		"CTRL_SIZE_RATIO": CTRL_SIZE_RATIO,
 		"UI_UNIT": UI_UNIT,
 		"UI_BUTTON_WIDTH": UI_BUTTON_WIDTH,
 		"UI_BUTTON_HEIGHT": UI_BUTTON_HEIGHT,
@@ -105,9 +101,9 @@ static func get_all_constants() -> Dictionary:
 		"UI_SPACING_LARGE": UI_SPACING_LARGE,
 		"UI_TITLE_FONT_SIZE": UI_TITLE_FONT_SIZE,
 		"UI_NORMAL_FONT_SIZE": UI_NORMAL_FONT_SIZE,
-		"CONTAINER_Z_INDEX": CONTAINER_Z_INDEX,
-		"CONTAINER_UI_Z_INDEX": CONTAINER_UI_Z_INDEX,
-		"CONTAINER_TITLE_Z_INDEX": CONTAINER_TITLE_Z_INDEX
+		"CTRL_Z_INDEX": CTRL_Z_INDEX,
+		"CTRL_UI_Z_INDEX": CTRL_UI_Z_INDEX,
+		"CTRL_TITLE_Z_INDEX": CTRL_TITLE_Z_INDEX
 	}
 
 # 打印所有常量（用于调试）

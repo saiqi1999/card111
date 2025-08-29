@@ -7,6 +7,7 @@
 - `root.tscn` - 主场景，游戏的入口点
 - `debug.tscn` - 调试场景，包含调试按钮和功能
 - `card.tscn` - 卡牌场景，用于显示卡牌
+- `ctrl.tscn` - 控制器场景，用于显示UI界面
 
 ## 场景说明
 
@@ -47,6 +48,27 @@
 1. `load_from_card_type("类型字符串")` - 通过类型字符串加载卡牌数据（推荐）
 2. `load_from_card_pack(card_pack)` - 从卡包实例加载数据
 3. `set_card_data(名称, 描述, 图像)` - 直接设置卡牌数据
+
+### 控制器场景 (Ctrl)
+
+`ctrl.tscn` 是用于显示各种UI界面的控制器场景。基于Control节点实现，支持响应式布局。包含以下节点：
+
+- `Ctrl` - 根节点（Control类型），附加了scripts/ctrl/ctrl_base.gd脚本
+  - `Background` - 背景面板，使用StyleBoxTexture显示纹理背景
+  - `TitleLabel` - 标题标签，显示控制器标题
+  - `DescriptionLabel` - 描述标签，显示控制器描述信息
+
+控制器场景特性：
+- **响应式布局**：使用Anchor系统自动适应屏幕尺寸
+- **自动定位**：控制器自动定位到屏幕左下角
+- **动态内容**：支持运行时设置标题和描述
+- **纹理背景**：支持StyleBoxTexture背景纹理显示
+- **单例管理**：确保场景中只存在一个控制器实例
+
+控制器场景可以通过以下方式使用：
+1. `CtrlUtil.load_ctrl_data("类型字符串", 标题, 描述)` - 加载指定类型的控制器
+2. `CtrlUtil.get_ctrl_pack_by_type("类型字符串")` - 获取控制器实例
+3. 直接在场景中实例化并设置属性
 
 ## 场景设计
 
