@@ -40,6 +40,8 @@ static var card_to_stack: Dictionary = {}  # 卡牌到堆叠的映射 {card_inst
 static var stack_id_counter: int = 0  # 堆叠ID计数器
 var stack_id: int = -1  # 当前卡牌所属的堆叠ID，-1表示不在任何堆叠中
 
+
+
 # 卡牌池系统（使用全局常量）
 static var card_pool: Array[Node2D] = []  # 预加载的卡牌池
 static var pool_size: int = GlobalConstants.CARD_POOL_SIZE  # 卡牌池大小
@@ -950,6 +952,9 @@ static func update_stack_positions(stack_id: int):
 		card.bring_to_front()
 		
 		GlobalUtil.log("更新堆叠卡牌位置: " + card.card_name + " 位置: " + str(card.global_position), GlobalUtil.LogLevel.DEBUG)
+	
+	# 通过RecipeUtil更新进度条位置
+	RecipeUtil.update_progress_bar_position_for_stack(stack_id)
 
 # 获取堆叠系统调试信息
 static func get_stack_debug_info() -> String:
@@ -1125,14 +1130,18 @@ func check_stack_for_crafting(stack_id: int):
 	var success = RecipeUtil.start_crafting(stack_cards, str(stack_id))
 	if success:
 		GlobalUtil.log("堆叠ID " + str(stack_id) + " 开始合成", GlobalUtil.LogLevel.INFO)
+		# 通过RecipeUtil显示进度条
+		RecipeUtil.show_progress_bar_for_stack(stack_id)
 	else:
 		GlobalUtil.log("堆叠ID " + str(stack_id) + " 未匹配任何配方", GlobalUtil.LogLevel.DEBUG)
 
 # 取消指定堆叠的合成任务
 func cancel_crafting_task_for_stack(stack_id: int):
-	# 调用RecipeUtil取消合成任务
+	# 调用RecipeUtil取消合成任务和隐藏进度条
 	var success = RecipeUtil.cancel_crafting(str(stack_id))
 	if success:
 		GlobalUtil.log("已取消堆叠ID " + str(stack_id) + " 的合成任务", GlobalUtil.LogLevel.INFO)
+		# 通过RecipeUtil隐藏进度条
+		RecipeUtil.hide_progress_bar_for_stack(stack_id)
 	else:
 		GlobalUtil.log("堆叠ID " + str(stack_id) + " 没有正在进行的合成任务", GlobalUtil.LogLevel.DEBUG)

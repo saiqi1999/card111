@@ -34,6 +34,13 @@
 #### 默认配方
 - **铁铲 + 土堆 → 初级花盆**: 合成时间5秒
 
+#### 合成进度条管理
+- **进度条显示**: 合成开始时自动显示进度条
+- **实时更新**: 合成过程中实时更新进度条显示
+- **位置同步**: 卡牌移动时进度条位置自动同步
+- **自动隐藏**: 合成完成或取消时自动隐藏进度条
+- **连续合成**: 支持连续合成，完成后自动检查是否可继续合成
+
 #### 主要方法
 - `register_recipe(ingredients, craft_time, result_type)`: 注册新配方
 - `check_stack_for_recipe(stack_cards)`: 检查堆叠是否匹配配方
@@ -41,6 +48,10 @@
 - `get_active_crafting_info()`: 获取当前合成任务信息
 - `cancel_crafting(stack_id)`: 取消指定堆叠的合成
 - `_complete_crafting(task)`: 完成合成，调用参与卡牌的`after_recipe_done`方法
+- `show_progress_bar_for_stack(stack_id)`: 显示指定堆叠的进度条
+- `update_progress_bar_for_stack(stack_id, progress)`: 更新进度条进度
+- `hide_progress_bar_for_stack(stack_id)`: 隐藏指定堆叠的进度条
+- `update_progress_bar_position_for_stack(stack_id)`: 更新进度条位置
 
 #### 使用方式
 ```gdscript

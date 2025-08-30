@@ -2,6 +2,12 @@
 # 用于管理卡牌之间的合成配方
 extends Node
 
+# 进度更新定时器
+var progress_update_timer: Timer
+
+# 合成进度条系统
+var stack_progress_bars: Dictionary = {}  # 堆叠进度条映射 {stack_id: progress_bar_instance}
+
 # 配方数据结构
 class Recipe:
 	var ingredients: Array[String] = []  # 参与合成的卡牌类型
@@ -64,22 +70,43 @@ var recipes: Array[Recipe] = []
 var active_crafting_tasks: Array[CraftingTask] = []
 
 func _ready():
-	# 注册默认配方
-	register_default_recipes()
+	# 从RecipeConstant加载配方
+	load_recipes_from_constant()
+	
+	# 初始化进度更新定时器
+	progress_update_timer = Timer.new()
+	progress_update_timer.wait_time = GlobalConstants.RECIPE_CHECK_INTERVAL
+	progress_update_timer.timeout.connect(_update_crafting_progress)
+	add_child(progress_update_timer)
+	progress_update_timer.start()
+	
 	GlobalUtil.log("RecipeUtil 初始化完成", GlobalUtil.LogLevel.INFO)
 
-# 注册默认配方
-func register_default_recipes():
-	# 铲子 + 土堆 = 基础花盆
-	# 使用卡牌类型名称（对应文件名）
-	var shovel_soil_recipe = Recipe.new(["iron_shovel", "dirt_pile"], GlobalConstants.DEFAULT_CRAFT_TIME, "primary_flower_pot")
-	recipes.append(shovel_soil_recipe)
-	GlobalUtil.log("注册配方: iron_shovel + dirt_pile -> primary_flower_pot (" + str(GlobalConstants.DEFAULT_CRAFT_TIME) + "秒)", GlobalUtil.LogLevel.INFO)
+# 从RecipeConstant加载配方
+func load_recipes_from_constant():
+	var recipe_data_list = RecipeConstant.get_all_recipes()
+	for recipe_data in recipe_data_list:
+		if recipe_data.has("ingredients") and recipe_data.has("products") and recipe_data.has("craft_time"):
+			# 目前只支持单一产出，取products数组的第一个元素
+			var result_type = recipe_data.products[0] if recipe_data.products.size() > 0 else ""
+			# 将普通Array转换为Array[String]类型
+			var ingredients_typed: Array[String] = []
+			for ingredient in recipe_data.ingredients:
+				ingredients_typed.append(str(ingredient))
+			var recipe = Recipe.new(ingredients_typed, recipe_data.craft_time, result_type)
+			recipes.append(recipe)
+			GlobalUtil.log("从RecipeConstant加载配方: " + str(recipe_data.ingredients) + " -> " + result_type + " (" + str(recipe_data.craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
+		else:
+			GlobalUtil.log("配方数据格式错误，跳过: " + str(recipe_data), GlobalUtil.LogLevel.ERROR)
 
 # 注册新配方
 func register_recipe(ingredients: Array[String], craft_time: float, result_type: String):
 	var recipe = Recipe.new(ingredients, craft_time, result_type)
 	recipes.append(recipe)
+	
+	# 同时添加到RecipeConstant中
+	RecipeConstant.add_recipe(ingredients, [result_type], craft_time)
+	
 	GlobalUtil.log("注册配方: " + str(ingredients) + " -> " + result_type + " (" + str(craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
 
 # 检查堆叠是否匹配某个配方
@@ -154,6 +181,9 @@ func _complete_crafting_task(task: CraftingTask):
 func _complete_crafting(task: CraftingTask):
 	GlobalUtil.log("合成完成: " + str(task.recipe.ingredients) + " -> " + task.recipe.result_type, GlobalUtil.LogLevel.INFO)
 	
+	# 隐藏进度条
+	hide_progress_bar_for_stack(int(task.stack_id))
+	
 	# 这里需要根据result_type创建对应的卡牌
 	_create_result_card(task.recipe.result_type, task.cards[0].global_position)
 	
@@ -222,6 +252,8 @@ func _check_stack_for_continued_crafting(stack_id: String):
 	
 	# 尝试开始新的合成任务
 	if start_crafting(stack_cards, stack_id):
+		# 显示进度条
+		show_progress_bar_for_stack(int(stack_id))
 		GlobalUtil.log("堆叠 " + stack_id + " 开始新的合成任务", GlobalUtil.LogLevel.INFO)
 	else:
 		GlobalUtil.log("堆叠 " + stack_id + " 无法开始新的合成任务", GlobalUtil.LogLevel.DEBUG)
@@ -240,3 +272,86 @@ func cancel_crafting(stack_id: String) -> bool:
 			active_crafting_tasks.remove_at(i)
 			return true
 	return false
+
+# 更新合成进度（定时器回调）
+func _update_crafting_progress():
+	# 遍历所有活跃的合成任务
+	for task in active_crafting_tasks:
+		var progress = task.get_progress()
+		var stack_id = int(task.stack_id)
+		
+		# 更新对应堆叠的进度条
+		update_progress_bar_for_stack(stack_id, progress)
+
+# ==================== 合成进度条管理 ====================
+
+# 为堆叠创建并显示进度条
+func show_progress_bar_for_stack(stack_id: int):
+	# 获取CardUtil来检查堆叠是否存在
+	var CardUtil = preload("res://scripts/cards/card_util.gd")
+	if not CardUtil.card_stacks.has(stack_id):
+		GlobalUtil.log("堆叠ID " + str(stack_id) + " 不存在，无法显示进度条", GlobalUtil.LogLevel.WARNING)
+		return
+	
+	# 如果进度条已存在，先销毁
+	if stack_id in stack_progress_bars:
+		hide_progress_bar_for_stack(stack_id)
+	
+	# 创建进度条实例
+	var progress_bar_script = preload("res://scripts/ui/crafting_progress_bar.gd")
+	var progress_bar = Control.new()
+	progress_bar.set_script(progress_bar_script)
+	
+	# 获取堆叠信息
+	var stack_cards = CardUtil.card_stacks[stack_id]
+	if stack_cards.size() == 0:
+		return
+	
+	# 获取底部卡牌位置和卡牌宽度
+	var bottom_card = stack_cards[0]
+	var card_width = GlobalConstants.CARD_WIDTH
+	var stack_height = GlobalConstants.CARD_HEIGHT + (stack_cards.size() - 1) * GlobalConstants.CARD_STACK_OFFSET
+	
+	# 将进度条添加到场景树
+	bottom_card.get_parent().add_child(progress_bar)
+	
+	# 设置进度条位置和显示
+	progress_bar.set_position_below_stack(bottom_card.global_position, stack_height)
+	progress_bar.show_progress_bar(card_width)
+	
+	# 保存进度条引用
+	stack_progress_bars[stack_id] = progress_bar
+	
+	GlobalUtil.log("为堆叠ID " + str(stack_id) + " 创建进度条", GlobalUtil.LogLevel.INFO)
+
+# 更新堆叠进度条
+func update_progress_bar_for_stack(stack_id: int, progress: float):
+	if stack_id in stack_progress_bars:
+		var progress_bar = stack_progress_bars[stack_id]
+		if progress_bar != null and is_instance_valid(progress_bar):
+			progress_bar.update_progress(progress)
+			GlobalUtil.log("更新堆叠ID " + str(stack_id) + " 进度条: " + str(progress * 100) + "%", GlobalUtil.LogLevel.DEBUG)
+
+# 隐藏并销毁堆叠进度条
+func hide_progress_bar_for_stack(stack_id: int):
+	if stack_id in stack_progress_bars:
+		var progress_bar = stack_progress_bars[stack_id]
+		if progress_bar != null and is_instance_valid(progress_bar):
+			progress_bar.hide_progress_bar()
+			progress_bar.queue_free()
+		stack_progress_bars.erase(stack_id)
+		GlobalUtil.log("销毁堆叠ID " + str(stack_id) + " 的进度条", GlobalUtil.LogLevel.INFO)
+
+# 更新堆叠位置时同步更新进度条位置
+func update_progress_bar_position_for_stack(stack_id: int):
+	var CardUtil = preload("res://scripts/cards/card_util.gd")
+	if not stack_id in stack_progress_bars or not CardUtil.card_stacks.has(stack_id):
+		return
+	
+	var progress_bar = stack_progress_bars[stack_id]
+	var stack_cards = CardUtil.card_stacks[stack_id]
+	
+	if progress_bar != null and is_instance_valid(progress_bar) and stack_cards.size() > 0:
+		var bottom_card = stack_cards[0]
+		var stack_height = GlobalConstants.CARD_HEIGHT + (stack_cards.size() - 1) * GlobalConstants.CARD_STACK_OFFSET
+		progress_bar.set_position_below_stack(bottom_card.global_position, stack_height)
