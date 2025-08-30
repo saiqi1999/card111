@@ -136,8 +136,11 @@ func _on_input_field_text_submitted(text: String):
 		# 清空输入框
 		input_field.text = ""
 	else:
-		# 打印其他输入
-		GlobalUtil.log("收到输入：" + text, GlobalUtil.LogLevel.INFO)
+		# 尝试根据前缀创建卡牌
+		var card_created = create_card_by_prefix(text)
+		if not card_created:
+			# 如果没有匹配的卡牌前缀，打印其他输入
+			GlobalUtil.log("收到输入：" + text, GlobalUtil.LogLevel.INFO)
 		
 		# 清空输入框
 		input_field.text = ""
@@ -293,6 +296,15 @@ func show_help():
 	GlobalUtil.log("log on - 开启日志输出", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("log off - 关闭日志输出", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("help - 显示此帮助信息", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("--- 卡牌前缀创建 ---", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("支持的卡牌前缀（中英文）：", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("blueberry/蓝莓, iron_axe/铁斧, iron_shovel/铁铲", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("sickle/镰刀, large_magic_aura/大魔法气息", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("small_magic_aura/小魔法气息, primary_flower_pot/初级花盆", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("pickaxe/十字镐, dirt_pile/土堆", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("large_blueberry_bush/大蓝莓丛, small_blueberry_bush/小蓝莓丛", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("old_wooden_house/旧木屋, forest_road/森林道路", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("wood_scraps/碎木头", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("========================", GlobalUtil.LogLevel.INFO)
 	GlobalUtil.log("当前日志状态: " + ("开启" if GlobalUtil.is_log_enabled() else "关闭"), GlobalUtil.LogLevel.INFO)
 
@@ -362,3 +374,75 @@ func create_overlapping_cards_test():
 	
 	# 打印所有卡牌的调试信息
 	GlobalUtil.log(CardUtil.get_all_cards_debug_info(), GlobalUtil.LogLevel.INFO)
+
+# 根据前缀创建卡牌
+func create_card_by_prefix(prefix: String) -> bool:
+	# 将输入转换为小写
+	var input_prefix = prefix.to_lower().strip_edges()
+	
+	# 定义卡牌前缀映射表
+	var card_prefix_map = {
+		"blueberry": "blueberry",
+		"蓝莓": "blueberry",
+		"iron_axe": "iron_axe",
+		"铁斧": "iron_axe",
+		"iron_shovel": "iron_shovel",
+		"铁铲": "iron_shovel",
+		"sickle": "sickle",
+		"镰刀": "sickle",
+		"large_magic_aura": "large_magic_aura",
+		"大魔法气息": "large_magic_aura",
+		"small_magic_aura": "small_magic_aura",
+		"小魔法气息": "small_magic_aura",
+		"primary_flower_pot": "primary_flower_pot",
+		"初级花盆": "primary_flower_pot",
+		"pickaxe": "pickaxe",
+		"十字镐": "pickaxe",
+		"dirt_pile": "dirt_pile",
+		"土堆": "dirt_pile",
+		"large_blueberry_bush": "large_blueberry_bush",
+		"大蓝莓丛": "large_blueberry_bush",
+		"small_blueberry_bush": "small_blueberry_bush",
+		"小蓝莓丛": "small_blueberry_bush",
+		"old_wooden_house": "old_wooden_house",
+		"旧木屋": "old_wooden_house",
+		"forest_road": "forest_road",
+		"森林道路": "forest_road",
+		"wood_scraps": "wood_scraps",
+		"碎木头": "wood_scraps"
+	}
+	
+	# 检查是否有匹配的前缀
+	if card_prefix_map.has(input_prefix):
+		var card_type = card_prefix_map[input_prefix]
+		GlobalUtil.log("根据前缀 '" + prefix + "' 创建卡牌类型：" + card_type, GlobalUtil.LogLevel.INFO)
+		
+		# 创建卡牌
+		var card = CardUtil.create_card_from_pool(root_node, card_type, GlobalConstants.SCREEN_CENTER)
+		if card:
+			card_count += 1
+			GlobalUtil.log("成功创建卡牌，当前卡牌数量：" + str(card_count), GlobalUtil.LogLevel.INFO)
+			return true
+		else:
+			GlobalUtil.log("创建卡牌失败：" + card_type, GlobalUtil.LogLevel.ERROR)
+			return false
+	else:
+		# 尝试模糊匹配
+		for key in card_prefix_map.keys():
+			if key.begins_with(input_prefix) or input_prefix.begins_with(key):
+				var card_type = card_prefix_map[key]
+				GlobalUtil.log("根据模糊匹配前缀 '" + prefix + "' 创建卡牌类型：" + card_type, GlobalUtil.LogLevel.INFO)
+				
+				# 创建卡牌
+				var card = CardUtil.create_card_from_pool(root_node, card_type, GlobalConstants.SCREEN_CENTER)
+				if card:
+					card_count += 1
+					GlobalUtil.log("成功创建卡牌，当前卡牌数量：" + str(card_count), GlobalUtil.LogLevel.INFO)
+					return true
+				else:
+					GlobalUtil.log("创建卡牌失败：" + card_type, GlobalUtil.LogLevel.ERROR)
+					return false
+	
+	# 没有找到匹配的前缀
+	GlobalUtil.log("未找到匹配的卡牌前缀：" + prefix, GlobalUtil.LogLevel.WARNING)
+	return false

@@ -1,6 +1,6 @@
 # 控制器系统
 
-控制器系统用于在游戏中显示和管理各种UI界面，如背包、商店界面等。采用Control+简化位置设置的UI实现方式。
+控制器系统用于在游戏中显示和管理各种UI界面，如背包、商店界面等。采用Control+简化位置设置的UI实现方式，并使用Godot的Autoload机制实现单例模式。
 
 ## 文件结构
 
@@ -54,9 +54,9 @@
    - `get_ctrl_pack_by_type()`: 通过类型获取控制器包实例
    - 目前支持 "400x300" 小控制器类型
 
-## 小控制器 (Ctrl400x300Pack)
+## 小控制器 (Ctrl400x300)
 
-`prefabs/ctrl_400_300.gd` 继承自 `CtrlBase`，提供400x300尺寸的小控制器预制件。
+`prefabs/ctrl_400_300.gd` 继承自 `CtrlBase`，提供400x300尺寸的小控制器预制件。现已配置为Autoload单例，可通过`Ctrl400x300`全局访问。
 
 #### 主要功能
 
@@ -65,29 +65,31 @@
 - **响应式设计**: 占据屏幕三分之一的长宽，留有100px边距
 - **动态标题描述**: 支持动态设置标题和描述文本
 
-#### 实现示例
+#### Autoload单例实现
 
 ```gdscript
-extends CtrlBase
-class_name Ctrl400x300Pack
+extends "res://scripts/ctrl/ctrl_base.gd"
 
-func _init():
-	# 调用父类初始化
-	super._init("400x300容器", "标准尺寸的小容器，位于左下角")
-	
-	# 设置点击回调
-	on_click = ctrl_400_300_click_effect
+# 400x300小控制器包（Autoload单例）
+# 继承自CtrlBase，提供小控制器的特定功能
+# 使用Godot的Autoload系统实现单例模式
 
-# 400x300容器的特有点击效果
-func ctrl_400_300_click_effect(ctrl_instance):
-	# 定义特有的点击行为
-	pass
+# 是否已经初始化
+var is_initialized: bool = false
 
-# 设置容器布局（重写父类方法以支持特殊布局需求）
-func setup_ctrl_layout():
-	# 调用父类布局
-	super.setup_ctrl_layout()
-	# 可以在这里添加特殊的布局逻辑
+# 显示控制器
+func show_ctrl():
+	visible = true
+	GlobalUtil.log("显示ctrl_400_300控制器", GlobalUtil.LogLevel.DEBUG)
+
+# 隐藏控制器
+func hide_ctrl():
+	visible = false
+	GlobalUtil.log("隐藏ctrl_400_300控制器", GlobalUtil.LogLevel.DEBUG)
+
+# 设置控制器标题和描述（兼容card_util.gd的调用）
+func set_ctrl_title_and_description(title: String, desc: String):
+	set_title_and_description(title, desc)
 ```
 
 ## 容器系统架构
@@ -142,55 +144,53 @@ static func get_ctrl_pack_by_type(type: String) -> CtrlBase:
 
 ## 使用方法
 
-### 通过卡牌召唤容器（推荐方式）
+### 使用Autoload单例（推荐方式）
 
-#### 召唤小容器
+#### 通过卡牌交互显示控制器
 
 ```gdscript
-# 在卡牌点击效果中召唤小容器
-func want_slime_click_effect(card_instance):
-	# 创建容器工具类实例
-	var ctrl_instance = preload("res://scripts/ctrl/ctrl_util.gd").new()
+# 鼠标进入卡牌时显示控制器
+func _on_mouse_entered():
+	# 使用Autoload访问ctrl_400_300单例
+	# 设置控制器的标题和描述
+	var card_title = card_name if card_name else "未知卡牌"
+	var card_desc = description if description else "无描述"
+	Ctrl400x300.set_ctrl_title_and_description(card_title, card_desc)
 	
-	# 从容器类型加载容器数据
-	ctrl_instance.load_from_ctrl_type("400x300")
-	
-	# 将容器添加到场景树中
-	get_tree().current_scene.add_child(ctrl_instance)
-	
-	# 设置容器标题和描述
-	var card_title = card_instance.card_name if card_instance.card_name else "召唤容器"
-	var card_desc = card_instance.description if card_instance.description else "容器描述"
-	ctrl_instance.set_ctrl_title_and_description(card_title, card_desc)
+	# 显示控制器
+	Ctrl400x300.show_ctrl()
+
+# 鼠标离开卡牌时隐藏控制器
+func _on_mouse_exited():
+	# 使用Autoload访问ctrl_400_300单例并隐藏
+	Ctrl400x300.hide_ctrl()
 ```
 
-### 直接创建容器
+### Autoload配置
 
-#### 方法一：使用场景文件
-```gdscript
-# 加载容器场景
-var ctrl_scene = preload("res://scenes/ctrl.tscn")
-var ctrl_instance = ctrl_scene.instantiate()
-get_tree().current_scene.add_child(ctrl_instance)
+在`project.godot`中配置Autoload：
 
-# 加载控制器类型
-ctrl_instance.load_from_ctrl_type("400x300")
+```ini
+[autoload]
+
+Ctrl400x300="*res://scripts/ctrl/prefabs/ctrl_400_300.gd"
 ```
 
-#### 方法二：直接使用脚本
+#### 全局访问方式
 ```gdscript
-# 创建400x300小容器
-var ctrl_util = preload("res://scripts/ctrl/ctrl_util.gd").new()
-get_tree().current_scene.add_child(ctrl_util)
-ctrl_util.load_from_ctrl_type("400x300")
+# 在任何脚本中直接使用
+Ctrl400x300.show_ctrl()  # 显示控制器
+Ctrl400x300.hide_ctrl()  # 隐藏控制器
+Ctrl400x300.set_ctrl_title_and_description("标题", "描述")  # 设置内容
 ```
 
 ### 容器特性
 - 自动布局到左下角
-- 响应式尺寸（屏幕三分之一，留100px边距）
+- 响应式尺寸（屏幕四分之一，留100px边距）
 - 支持动态标题和描述
-- 单例模式管理（场上只能存在一个容器）
+- Autoload单例模式（全局唯一实例）
 - 基于Control的原生UI交互
+- 内存安全（Godot引擎自动管理生命周期）
 
 ## 系统架构
 
@@ -222,19 +222,22 @@ Prefabs/
 1. **Control实现**: 使用Godot原生Control节点，享受完整的UI系统支持
 2. **简化布局**: 使用简单的位置设置替代复杂的Anchor系统，避免显示问题
 3. **响应式缩放**: 根据屏幕分辨率动态计算尺寸，适应不同屏幕尺寸
-4. **单例管理**: 确保场上只能存在一个控制器实例，避免UI冲突
-5. **自动布局**: 控制器自动定位到左下角，无需手动设置复杂的锚点
-6. **动态内容**: 支持动态设置标题和描述，适应不同使用场景
-7. **类型系统**: 通过类型字符串管理不同控制器类型，易于扩展
-8. **生命周期管理**: 完善的创建、初始化和销毁流程
-9. **UI层级**: 基于Control的自然层级管理，无需手动设置z_index
+4. **Autoload单例**: 使用Godot官方推荐的Autoload机制实现单例模式
+5. **全局访问**: 通过Autoload名称在任何脚本中直接访问
+6. **内存安全**: Godot引擎自动管理Autoload生命周期，避免内存泄漏
+7. **自动布局**: 控制器自动定位到左下角，无需手动设置复杂的锚点
+8. **动态内容**: 支持动态设置标题和描述，适应不同使用场景
+9. **类型系统**: 通过类型字符串管理不同控制器类型，易于扩展
+10. **生命周期管理**: 完善的创建、初始化和销毁流程
+11. **UI层级**: 基于Control的自然层级管理，无需手动设置z_index
 
 ## 注意事项
 
-1. **单例模式**: 系统确保场上只能存在一个容器实例
-2. **自动清理**: 当创建新容器时，会自动移除已存在的容器
+1. **Autoload配置**: 需要在project.godot中正确配置Autoload才能使用
+2. **全局唯一**: Autoload确保全局只有一个实例，无需手动管理
 3. **响应式布局**: 容器会根据屏幕尺寸自动调整大小和位置
 4. **UI原生**: 基于Control实现，享受Godot UI系统的所有特性
+5. **初始化检查**: 使用is_initialized标志确保_ready方法只执行一次
 
 ## 扩展性
 

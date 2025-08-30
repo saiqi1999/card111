@@ -1,8 +1,21 @@
 extends "res://scripts/ctrl/ctrl_base.gd"
-class_name Ctrl400x300Pack
 
-# 400x300小控制器包
+# 400x300小控制器包（Autoload单例）
 # 继承自CtrlBase，提供小控制器的特定功能
+# 使用Godot的Autoload系统实现单例模式
+
+# 是否已经初始化
+var is_initialized: bool = false
+
+# 显示控制器
+func show_ctrl():
+	visible = true
+	GlobalUtil.log("显示ctrl_400_300控制器", GlobalUtil.LogLevel.DEBUG)
+
+# 隐藏控制器
+func hide_ctrl():
+	visible = false
+	GlobalUtil.log("隐藏ctrl_400_300控制器", GlobalUtil.LogLevel.DEBUG)
 
 # 初始化小控制器
 func _init():
@@ -14,6 +27,37 @@ func _init():
 	on_click = ctrl_400_300_click_effect
 	
 	GlobalUtil.log("创建小容器实例", GlobalUtil.LogLevel.DEBUG)
+
+# 重写_ready方法，确保单例模式下只初始化一次
+func _ready():
+	if is_initialized:
+		return
+	
+	# 设置控制器可见性和层级
+	visible = false  # 初始时隐藏控制器
+	z_index = GlobalConstants.CTRL_Z_INDEX
+	modulate = Color.WHITE  # 确保不透明
+	
+	# 设置控制器UI
+	setup_ctrl_ui()
+	
+	# 设置控制器布局
+	setup_ctrl_layout()
+	
+	# 更新背景纹理
+	update_background_texture()
+	
+	# 标记为已初始化
+	is_initialized = true
+	
+	# 输出详细的调试信息
+	var screen_size = get_viewport().get_visible_rect().size
+	GlobalUtil.log("ctrl_400_300单例初始化完成: " + ctrl_name, GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("- 屏幕尺寸: " + str(screen_size), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("- 控制器尺寸: " + str(size), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("- 控制器位置: (" + str(position.x) + ", " + str(position.y) + ")", GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("- 控制器偏移: left=" + str(offset_left) + ", top=" + str(offset_top) + ", right=" + str(offset_right) + ", bottom=" + str(offset_bottom), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("- 可见性: " + str(visible) + ", z_index: " + str(z_index) + ", modulate: " + str(modulate), GlobalUtil.LogLevel.DEBUG)
 
 # 设置小控制器布局（覆盖父类方法，固定在左下角，根据屏幕分辨率缩放）
 func setup_ctrl_layout():
@@ -89,6 +133,10 @@ func set_title_and_description(title: String, desc: String):
 	if description_label:
 		description_label.text = desc
 	GlobalUtil.log("设置容器标题: " + title + ", 描述: " + desc, GlobalUtil.LogLevel.DEBUG)
+
+# 设置控制器标题和描述（兼容card_util.gd的调用）
+func set_ctrl_title_and_description(title: String, desc: String):
+	set_title_and_description(title, desc)
 
 # 小控制器点击效果
 func ctrl_400_300_click_effect(ctrl_instance):

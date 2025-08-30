@@ -106,6 +106,14 @@ card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 - 打击卡牌示例：点击时打印卡牌实例ID和1-100的随机数
 - 支持任意自定义的点击逻辑，可获取卡牌实例的完整信息
 
+**控制器集成**：卡牌系统与控制器系统深度集成：
+- 鼠标悬停时自动显示控制器，显示卡牌详细信息
+- 使用Autoload单例模式访问控制器（`Ctrl400x300`）
+- 鼠标进入卡牌区域时调用`Ctrl400x300.show_ctrl()`显示控制器
+- 鼠标离开卡牌区域时调用`Ctrl400x300.hide_ctrl()`隐藏控制器
+- 自动设置控制器标题和描述为卡牌名称和描述
+- 控制器显示在屏幕左下角，不干扰卡牌操作
+
 **移动动画功能**：
 
 ```gdscript
@@ -146,6 +154,11 @@ CardUtil.unregister_card(card_instance)  # 从层级管理系统移除卡牌
 CardUtil.bring_to_front(card_instance)  # 将卡牌置于最上层
 var is_top = CardUtil.is_top_card_at_position(card_instance, mouse_position)  # 检查是否为最上层卡牌
 CardUtil.cleanup_invalid_cards()  # 清理失效的卡牌引用
+
+# 控制器集成相关方法（自动处理，无需手动调用）
+# 鼠标进入事件：_on_mouse_entered() - 自动显示控制器并设置卡牌信息
+# 鼠标离开事件：_on_mouse_exited() - 自动隐藏控制器
+# 控制器访问：通过Autoload单例Ctrl400x300直接访问
 ```
 
 #### 卡牌尺寸

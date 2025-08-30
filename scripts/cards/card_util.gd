@@ -517,13 +517,29 @@ func _process(_delta):
 			if card != null and is_instance_valid(card):
 				card.global_position = global_position + card.drag_offset
 
-# 鼠标进入事件（调试用）
+# 鼠标进入事件 - 显示ctrl窗口
 func _on_mouse_entered():
 	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 鼠标进入卡牌区域", GlobalUtil.LogLevel.DEBUG)
+	
+	# 使用Autoload访问ctrl_400_300单例
+	# 设置控制器的标题和描述（读取卡牌信息）
+	var card_title = card_name if card_name else "未知卡牌"
+	var card_desc = description if description else "无描述"
+	Ctrl400x300.set_ctrl_title_and_description(card_title, card_desc)
+	
+	# 显示控制器
+	Ctrl400x300.show_ctrl()
+	
+	GlobalUtil.log("卡牌hover时显示ctrl窗口，设置卡牌信息 - 标题: " + card_title + ", 描述: " + card_desc, GlobalUtil.LogLevel.INFO)
 
-# 鼠标离开事件（调试用）
+# 鼠标离开事件 - 隐藏ctrl窗口
 func _on_mouse_exited():
 	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 鼠标离开卡牌区域", GlobalUtil.LogLevel.DEBUG)
+	
+	# 使用Autoload访问ctrl_400_300单例并隐藏
+	Ctrl400x300.hide_ctrl()
+	
+	GlobalUtil.log("卡牌鼠标离开时隐藏ctrl窗口", GlobalUtil.LogLevel.INFO)
 
 # 打印卡牌信息
 func print_card_info():
