@@ -6,6 +6,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("森林道路", "穿越森林的小径，可以快速移动")
 	
+	# 设置卡牌类型标识符
+	card_type = "forest_road"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/森林道路.png")
 	

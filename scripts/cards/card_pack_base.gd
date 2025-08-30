@@ -8,6 +8,7 @@ var description: String = "基础卡包描述"
 # 卡牌属性
 var card_name: String = "未命名卡牌"
 var card_description: String = "无描述"
+var card_type: String = ""  # 卡牌类型标识符，对应文件名
 var on_click: Callable = Callable()  # 卡牌点击时的个性化效果
 
 # 卡包图片资源
@@ -35,3 +36,10 @@ func get_card_data() -> Dictionary:
 		"image": pack_image,
 		"on_click": on_click
 	}
+
+# 合成完成后的回调方法
+# 子类可以重写此方法来实现特定的合成后逻辑
+# card_instance: 当前卡牌实例
+# crafting_cards: 参与合成的卡牌列表
+func after_recipe_done(card_instance, crafting_cards: Array):
+	pass

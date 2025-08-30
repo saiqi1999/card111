@@ -87,3 +87,21 @@ static func update_screen_size_from_viewport(viewport: Viewport) -> void:
 		set_screen_size(size)
 	else:
 		GlobalUtil.log("无法更新屏幕分辨率 - viewport为空", GlobalUtil.LogLevel.WARNING)
+
+# 生成随机方向向量（使用极坐标系统）
+# avoid_range: 避开中心的最小距离
+# max_range: 最大移动距离
+static func generate_random_direction_vector(avoid_range: float, max_range: float) -> Vector2:
+	# 随机生成距离（在避开范围和最大范围之间）
+	var distance = randf_range(avoid_range, max_range)
+	
+	# 随机生成角度（0-360度，转换为弧度）
+	var angle_degrees = randf_range(0.0, 360.0)
+	var angle_radians = deg_to_rad(angle_degrees)
+	
+	# 使用三角函数计算x和y分量
+	var x = distance * cos(angle_radians)
+	var y = distance * sin(angle_radians)
+	
+	# 返回向量
+	return Vector2(x, y)

@@ -21,6 +21,34 @@
 - `calculate_distance(point1, point2)`: 计算两点之间的距离
 - `format_time(seconds)`: 将秒数格式化为分:秒格式
 
+### recipe_util.gd
+
+配方管理工具类，作为Autoload单例运行，负责管理卡牌之间的合成配方：
+
+#### 核心功能
+- **配方注册**: 支持动态注册新的合成配方
+- **自动检测**: 当卡牌形成堆叠时自动检查是否匹配配方
+- **合成管理**: 管理合成进度和时间控制
+- **回调处理**: 合成完成后自动调用参与卡牌的`after_recipe_done`方法
+
+#### 默认配方
+- **铁铲 + 土堆 → 初级花盆**: 合成时间5秒
+
+#### 主要方法
+- `register_recipe(ingredients, craft_time, result_type)`: 注册新配方
+- `check_stack_for_recipe(stack_cards)`: 检查堆叠是否匹配配方
+- `start_crafting(stack_cards, stack_id)`: 开始合成过程
+- `get_active_crafting_info()`: 获取当前合成任务信息
+- `cancel_crafting(stack_id)`: 取消指定堆叠的合成
+- `_complete_crafting(task)`: 完成合成，调用参与卡牌的`after_recipe_done`方法
+
+#### 使用方式
+```gdscript
+# 全局访问（Autoload单例）
+RecipeUtil.register_recipe(["卡牌A", "卡牌B"], 3.0, "合成产物")
+var crafting_info = RecipeUtil.get_active_crafting_info()
+```
+
 ### global_constants.gd
 
 全局常量类，定义了游戏中使用的所有常量配置：
@@ -46,6 +74,10 @@
 #### 屏幕位置常量
 - `SCREEN_CENTER`: 屏幕中心位置（960, 540）
 - `SCREEN_LEFT_OUTSIDE`: 屏幕左侧外部位置（-200, 540）
+
+#### 配方合成相关常量
+- `DEFAULT_CRAFT_TIME`: 默认合成时间（5.0秒）
+- `RECIPE_CHECK_INTERVAL`: 合成进度检查间隔（0.1秒）
 
 #### 日志配置常量
 - `DEFAULT_LOG_ENABLED`: 默认日志开关状态（true）

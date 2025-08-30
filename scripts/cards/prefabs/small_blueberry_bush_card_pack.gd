@@ -6,6 +6,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("小蓝莓丛", "幼小的蓝莓丛，可以采集少量蓝莓")
 	
+	# 设置卡牌类型标识符
+	card_type = "small_blueberry_bush"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/小蓝莓丛.png")
 	

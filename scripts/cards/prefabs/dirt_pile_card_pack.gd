@@ -1,19 +1,37 @@
 extends "res://scripts/cards/card_pack_base.gd"
 # 土堆卡包
+# 导入卡牌工具类
+const CardUtil = preload("res://scripts/cards/card_util.gd")
+# 合成计数器
+var recipe_count: int = 0
 
 # 初始化函数
 func _init():
 	# 调用父类的初始化函数，设置名称和描述
-	super._init("土堆", "可以用于种植或建造的土壤")
+	super._init("土堆", "一堆松软的土壤")
+	
+	# 设置卡牌类型标识符
+	card_type = "dirt_pile"
 	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/土堆.png")
 	
 	# 设置卡牌数据
-	set_card_data("土堆", "可以用于种植或建造的土壤")
+	set_card_data("土堆", "一堆松软的土壤")
 	
 	# 设置点击特效
 	on_click = dirt_pile_click_effect
+
+# 重写合成完成后的回调方法
+func after_recipe_done(card_instance, crafting_cards: Array):
+	recipe_count += 1
+	GlobalUtil.log("土堆卡包参与合成，当前计数: " + str(recipe_count), GlobalUtil.LogLevel.INFO)
+	
+	# 3次合成后回收自己
+	if recipe_count >= 3:
+		GlobalUtil.log("土堆卡包达到3次合成，开始回收", GlobalUtil.LogLevel.INFO)
+		# 通过卡牌实例访问 CardUtil 的静态方法
+		CardUtil.remove(card_instance)
 
 # 土堆卡牌的点击特效
 # 参数: card_instance - 触发点击的卡牌实例

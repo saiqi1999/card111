@@ -6,6 +6,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("铁斧", "锋利的铁制斧头，用于砍伐树木")
 	
+	# 设置卡牌类型标识符
+	card_type = "iron_axe"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/铁斧.png")
 	

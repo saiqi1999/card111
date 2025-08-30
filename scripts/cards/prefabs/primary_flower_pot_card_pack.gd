@@ -6,6 +6,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("初级花盆", "用于种植植物的基础花盆")
 	
+	# 设置卡牌类型标识符
+	card_type = "primary_flower_pot"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/初级花盆.png")
 	

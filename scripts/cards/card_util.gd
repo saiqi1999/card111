@@ -13,8 +13,9 @@ var description: String = "无描述"
 var card_image: Texture2D = null
 var on_click: Callable = Callable()  # 卡牌点击时的个性化效果
 
-# 卡包引用
+# 卡包引用和类型信息
 var card_pack: CardPackBase = null
+var card_type: String = ""  # 卡牌类型名称（对应文件名）
 
 # 卡牌拖拽相关变量
 var is_dragging: bool = false
@@ -234,8 +235,16 @@ func load_from_card_pack(p_card_pack):
 # 通过卡包类型字符串加载卡牌
 func load_from_card_type(type_name: String):
 	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 调用 load_from_card_type() 函数，类型: " + type_name, GlobalUtil.LogLevel.DEBUG)
+	
 	# 通过类型字符串获取卡包实例
 	var pack = get_card_pack_by_type(type_name)
+	
+	# 从卡包实例获取card_type（如果卡包有设置的话）
+	if pack.card_type != "":
+		card_type = pack.card_type
+	else:
+		# 如果卡包没有设置card_type，使用传入的type_name作为备用
+		card_type = type_name
 	
 	# 加载卡包数据
 	return load_from_card_pack(pack)
@@ -310,32 +319,20 @@ static func move_card(card_instance: Node2D, target_position: Vector2, duration:
 
 # 随机移动卡牌到非中心区域
 static func random_move_card(card_instance: Node2D):
-	# 生成随机的x坐标（使用全局常量定义的范围，但不在中心避让范围内）
-	var random_x: float = 0.0
-	if randf() < 0.5:
-		# 生成负方向的随机数
-		random_x = randf_range(-GlobalConstants.RANDOM_MOVE_RANGE, -GlobalConstants.CENTER_AVOID_RANGE)
-	else:
-		# 生成正方向的随机数
-		random_x = randf_range(GlobalConstants.CENTER_AVOID_RANGE, GlobalConstants.RANDOM_MOVE_RANGE)
-	
-	# 生成随机的y坐标（使用全局常量定义的范围，但不在中心避让范围内）
-	var random_y: float = 0.0
-	if randf() < 0.5:
-		# 生成负方向的随机数
-		random_y = randf_range(-GlobalConstants.RANDOM_MOVE_RANGE, -GlobalConstants.CENTER_AVOID_RANGE)
-	else:
-		# 生成正方向的随机数
-		random_y = randf_range(GlobalConstants.CENTER_AVOID_RANGE, GlobalConstants.RANDOM_MOVE_RANGE)
+	# 使用新的极坐标随机向量生成方法
+	var random_vector = GlobalUtil.generate_random_direction_vector(
+		GlobalConstants.CENTER_AVOID_RANGE, 
+		GlobalConstants.RANDOM_MOVE_RANGE
+	)
 	
 	# 计算目标位置（相对当前位置）
-	var target_position = card_instance.position + Vector2(random_x, random_y)
+	var target_position = card_instance.position + random_vector
 	
 	# 调用move_card方法移动卡牌
 	move_card(card_instance, target_position, GlobalConstants.DEFAULT_MOVE_DURATION)
 	
 	# 返回移动的距离向量
-	return Vector2(random_x, random_y)
+	return random_vector
 
 # 设置输入检测
 func setup_input_detection():
@@ -521,16 +518,24 @@ func _process(_delta):
 func _on_mouse_entered():
 	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 鼠标进入卡牌区域", GlobalUtil.LogLevel.DEBUG)
 	
-	# 使用Autoload访问ctrl_400_300单例
-	# 设置控制器的标题和描述（读取卡牌信息）
-	var card_title = card_name if card_name else "未知卡牌"
-	var card_desc = description if description else "无描述"
-	Ctrl400x300.set_ctrl_title_and_description(card_title, card_desc)
+	# 检查卡牌是否在堆叠中
+	if is_in_stack():
+		# 如果在堆叠中，显示堆叠信息
+		var stack_display_info = format_stack_info_for_display()
+		var stack_title = stack_display_info["title"]
+		var stack_desc = stack_display_info["description"]
+		
+		Ctrl400x300.set_ctrl_title_and_description(stack_title, stack_desc)
+		GlobalUtil.log("卡牌在堆叠中，显示堆叠信息 - 标题: " + stack_title + ", 描述: " + stack_desc, GlobalUtil.LogLevel.INFO)
+	else:
+		# 如果不在堆叠中，显示单张卡牌信息
+		var card_title = card_name if card_name else "未知卡牌"
+		var card_desc = description if description else "无描述"
+		Ctrl400x300.set_ctrl_title_and_description(card_title, card_desc)
+		GlobalUtil.log("卡牌不在堆叠中，显示单张卡牌信息 - 标题: " + card_title + ", 描述: " + card_desc, GlobalUtil.LogLevel.INFO)
 	
 	# 显示控制器
 	Ctrl400x300.show_ctrl()
-	
-	GlobalUtil.log("卡牌hover时显示ctrl窗口，设置卡牌信息 - 标题: " + card_title + ", 描述: " + card_desc, GlobalUtil.LogLevel.INFO)
 
 # 鼠标离开事件 - 隐藏ctrl窗口
 func _on_mouse_exited():
@@ -608,9 +613,17 @@ static func get_card_from_pool(root_node: Node) -> Node2D:
 	return card_instance
 
 # 将卡牌返回到池中
-static func return_card_to_pool(card: Node2D):
+static func remove(card: Node2D):
 	if card == null or not is_instance_valid(card):
 		return
+	
+	# 从堆叠中移除卡牌
+	if card.has_method("remove_from_current_stack"):
+		card.remove_from_current_stack()
+	
+	# 注销卡牌
+	if card.has_method("unregister_card"):
+		card.unregister_card()
 	
 	# 重置卡牌状态
 	card.position = hidden_position
@@ -633,6 +646,8 @@ static func return_card_to_pool(card: Node2D):
 	
 	# 返回到池中
 	card_pool.append(card)
+	
+	GlobalUtil.log("卡牌已移除并返回池中，ID: " + str(card.get_instance_id()), GlobalUtil.LogLevel.DEBUG)
 	GlobalUtil.log("卡牌已返回池中，池大小: " + str(card_pool.size()), GlobalUtil.LogLevel.DEBUG)
 
 # 瞬移卡牌到目标位置
@@ -672,11 +687,41 @@ func check_and_stack_card():
 	var current_pos = global_position
 	var target_card = find_stackable_card_at_position(current_pos)
 	
+	# 记录原始堆叠信息，用于检测是否需要取消合成任务
+	var original_stack_id = -1
+	var was_bottom_card = false
+	var current_instance_id = get_instance_id()
+	
+	# 检查当前卡牌是否在堆叠中
+	if current_instance_id in card_to_stack:
+		original_stack_id = card_to_stack[current_instance_id]
+		# 检查是否是堆叠底部卡牌（索引为0）
+		if original_stack_id in card_stacks and card_stacks[original_stack_id].size() > 0:
+			was_bottom_card = (card_stacks[original_stack_id][0] == self)
+	
 	if target_card != null and target_card != self:
 		GlobalUtil.log("找到可堆叠的目标卡牌: " + target_card.card_name, GlobalUtil.LogLevel.DEBUG)
+		
+		# 检查是否回到原来的堆叠位置（相当于没有移动）
+		var target_instance_id = target_card.get_instance_id()
+		var is_returning_to_original = false
+		
+		if target_instance_id in card_to_stack:
+			var target_stack_id = card_to_stack[target_instance_id]
+			is_returning_to_original = (target_stack_id == original_stack_id)
+		
+		# 如果不是回到原来的位置，且原来不是底部卡牌，说明拆分了堆叠，需要取消原堆叠的合成任务
+		if not is_returning_to_original and not was_bottom_card and original_stack_id != -1:
+			cancel_crafting_task_for_stack(original_stack_id)
+		
 		stack_card_group_on_target(target_card)
 	else:
 		GlobalUtil.log("未找到可堆叠的目标卡牌", GlobalUtil.LogLevel.DEBUG)
+		
+		# 如果原来不是底部卡牌且移动到了新位置，说明拆分了堆叠，需要取消原堆叠的合成任务
+		if not was_bottom_card and original_stack_id != -1:
+			cancel_crafting_task_for_stack(original_stack_id)
+		
 		# 如果没有找到目标卡牌，检查是否有连带拖拽的卡牌
 		if dragging_cards.size() > 0:
 			# 创建新的堆叠
@@ -737,6 +782,12 @@ func stack_card_group_on_target(target_card: Node2D):
 	# 获取或创建目标卡牌的堆叠
 	var target_stack_id = get_or_create_stack_for_card(target_card)
 	
+	# 记录原始堆叠ID，用于后续检查（所有卡牌来自同一个堆叠）
+	var original_stack_id = -1
+	var current_instance_id = get_instance_id()
+	if current_instance_id in card_to_stack:
+		original_stack_id = card_to_stack[current_instance_id]
+	
 	# 首先处理主卡牌
 	remove_from_current_stack()
 	
@@ -767,6 +818,14 @@ func stack_card_group_on_target(target_card: Node2D):
 	# 更新堆叠中所有卡牌的位置
 	update_stack_positions(target_stack_id)
 	
+	# 检查目标堆叠是否匹配配方并开始合成
+	check_stack_for_crafting(target_stack_id)
+	
+	# 检查原始堆叠是否依然存在，如果存在也需要检查合成条件
+	if original_stack_id != -1 and original_stack_id in card_stacks and original_stack_id != target_stack_id:
+		check_stack_for_crafting(original_stack_id)
+		GlobalUtil.log("检查原始堆叠ID " + str(original_stack_id) + " 的合成条件", GlobalUtil.LogLevel.DEBUG)
+	
 	GlobalUtil.log("卡牌组已堆叠到 " + target_card.card_name + " 上，主卡牌: " + card_name + "，连带卡牌数: " + str(dragging_cards.size()), GlobalUtil.LogLevel.INFO)
 
 # 创建新的堆叠包含主卡牌和连带卡牌
@@ -795,6 +854,9 @@ func create_new_stack_with_cards():
 	
 	# 更新堆叠中所有卡牌的位置
 	update_stack_positions(new_stack_id)
+	
+	# 检查堆叠是否匹配配方并开始合成
+	check_stack_for_crafting(new_stack_id)
 	
 	GlobalUtil.log("创建新堆叠，ID: " + str(new_stack_id) + "，主卡牌: " + card_name + "，连带卡牌数: " + str(dragging_cards.size()), GlobalUtil.LogLevel.INFO)
 
@@ -978,3 +1040,99 @@ func get_cards_above() -> Array[Node2D]:
 	
 	GlobalUtil.log("获取到 " + str(cards_above.size()) + " 张上方卡牌", GlobalUtil.LogLevel.DEBUG)
 	return cards_above
+
+# 检查当前卡牌是否在堆叠中
+func is_in_stack() -> bool:
+	var current_instance_id = get_instance_id()
+	return current_instance_id in card_to_stack
+
+# 获取当前卡牌所在堆叠的统计信息
+func get_stack_info() -> Dictionary:
+	var stack_info = {}
+	var current_instance_id = get_instance_id()
+	
+	# 如果不在堆叠中，返回空字典
+	if not current_instance_id in card_to_stack:
+		return stack_info
+	
+	var current_stack_id = card_to_stack[current_instance_id]
+	
+	# 如果堆叠不存在，返回空字典
+	if not current_stack_id in card_stacks:
+		return stack_info
+	
+	var stack = card_stacks[current_stack_id]
+	var card_counts = {}  # 存储每种卡牌的数量
+	var total_cards = 0
+	
+	# 统计堆叠中每种卡牌的数量
+	for card in stack:
+		if card != null and is_instance_valid(card):
+			total_cards += 1
+			var card_name = card.card_name if card.card_name else "未知卡牌"
+			
+			if card_name in card_counts:
+				card_counts[card_name] += 1
+			else:
+				card_counts[card_name] = 1
+	
+	# 构建返回信息
+	stack_info["total_cards"] = total_cards
+	stack_info["card_counts"] = card_counts
+	stack_info["stack_id"] = current_stack_id
+	
+	GlobalUtil.log("获取堆叠信息: 总计 " + str(total_cards) + " 张卡牌，" + str(card_counts.size()) + " 种类型", GlobalUtil.LogLevel.DEBUG)
+	return stack_info
+
+# 格式化堆叠信息为显示文本
+func format_stack_info_for_display() -> Dictionary:
+	var stack_info = get_stack_info()
+	
+	if stack_info.is_empty():
+		return {"title": card_name, "description": description}
+	
+	var card_counts = stack_info["card_counts"]
+	var total_cards = stack_info["total_cards"]
+	
+	# 构建标题
+	var title = "卡牌堆叠 (" + str(total_cards) + "张)"
+	
+	# 构建描述
+	var description_lines = []
+	for cardname in card_counts.keys():
+		var count = card_counts[cardname]
+		description_lines.append(cardname + " x" + str(count))
+	
+	var formatted_description = "\n".join(description_lines)
+	
+	return {"title": title, "description": formatted_description}
+
+# 检查堆叠是否匹配配方并开始合成
+func check_stack_for_crafting(stack_id: int):
+	# 检查堆叠是否存在
+	if not stack_id in card_stacks:
+		GlobalUtil.log("堆叠ID " + str(stack_id) + " 不存在，无法检查配方", GlobalUtil.LogLevel.WARNING)
+		return
+	
+	var stack_cards = card_stacks[stack_id]
+	
+	# 检查堆叠中是否有足够的卡牌
+	if stack_cards.size() < 2:
+		GlobalUtil.log("堆叠卡牌数量不足，无法进行合成检查", GlobalUtil.LogLevel.DEBUG)
+		return
+	
+	# 调用RecipeUtil检查配方并开始合成
+	var success = RecipeUtil.start_crafting(stack_cards, str(stack_id))
+	if success:
+		GlobalUtil.log("堆叠ID " + str(stack_id) + " 开始合成", GlobalUtil.LogLevel.INFO)
+	else:
+		GlobalUtil.log("堆叠ID " + str(stack_id) + " 未匹配任何配方", GlobalUtil.LogLevel.DEBUG)
+
+# 取消指定堆叠的合成任务
+func cancel_crafting_task_for_stack(stack_id: int):
+	# 调用RecipeUtil取消合成任务
+	var success = RecipeUtil.cancel_crafting(str(stack_id))
+	if success:
+		GlobalUtil.log("已取消堆叠ID " + str(stack_id) + " 的合成任务", GlobalUtil.LogLevel.INFO)
+	else:
+		GlobalUtil.log("堆叠ID " + str(stack_id) + " 没有正在进行的合成任务", GlobalUtil.LogLevel.DEBUG)

@@ -14,6 +14,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("Basic Skill Pack卡包", "包含基础技能的卡包")
 	
+	# 设置卡牌类型标识符
+	card_type = "basic_skill_pack"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/basicSkillPack.jpg")
 	
@@ -30,7 +33,7 @@ func basic_skill_pack_click_effect(card_instance):
 	if generated_cards_count >= MAX_GENERATED_CARDS:
 		GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " Basic Skill Pack已生成" + str(MAX_GENERATED_CARDS) + "张卡牌，开始回收", GlobalUtil.LogLevel.INFO)
 		# 回收当前卡牌到池中
-		CardUtil.return_card_to_pool(card_instance)
+		CardUtil.remove(card_instance)
 		return
 	
 	# 随机选择卡牌类型（打击或防御）
@@ -72,4 +75,4 @@ func basic_skill_pack_click_effect(card_instance):
 	# 如果生成了第五张卡牌，立即回收自身
 	if generated_cards_count >= MAX_GENERATED_CARDS:
 		GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " Basic Skill Pack已生成第" + str(MAX_GENERATED_CARDS) + "张卡牌，立即回收自身", GlobalUtil.LogLevel.INFO)
-		CardUtil.return_card_to_pool(card_instance)
+		CardUtil.remove(card_instance)

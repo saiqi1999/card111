@@ -8,6 +8,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("打击卡包", "包含基础打击卡牌的卡包")
 	
+	# 设置卡牌类型标识符
+	card_type = "strike"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/strike.png")
 	

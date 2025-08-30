@@ -99,6 +99,7 @@ card_instance.set_card_data("卡牌名称", "卡牌描述", 卡牌图像)
 - 连带拖拽：拖拽堆叠中的卡牌时，会连带拖拽堆叠中的其他卡牌
 - 智能堆叠管理：自动处理堆叠的创建、合并和删除
 - 堆叠位置同步：堆叠中的所有卡牌位置保持同步
+- 堆叠状态管理：移除卡牌时自动更新堆叠映射关系，确保数据一致性
 
 **个性化点击效果**：每张卡牌支持自定义点击效果：
 - 通过卡包的`on_click`属性设置点击回调函数
@@ -155,6 +156,9 @@ CardUtil.bring_to_front(card_instance)  # 将卡牌置于最上层
 var is_top = CardUtil.is_top_card_at_position(card_instance, mouse_position)  # 检查是否为最上层卡牌
 CardUtil.cleanup_invalid_cards()  # 清理失效的卡牌引用
 
+# 卡牌移除系统
+CardUtil.remove(card_instance)  # 安全移除卡牌，自动处理堆叠更新、注销和状态重置
+
 # 控制器集成相关方法（自动处理，无需手动调用）
 # 鼠标进入事件：_on_mouse_entered() - 自动显示控制器并设置卡牌信息
 # 鼠标离开事件：_on_mouse_exited() - 自动隐藏控制器
@@ -191,6 +195,30 @@ const CARD_HEIGHT: float = GlobalConstants.CARD_HEIGHT  # 卡牌高度
 - 类型安全的常量定义
 - 易于维护和修改
 - 避免硬编码错误
+
+#### 合成回调系统
+
+卡包基类支持合成完成后的回调机制：
+
+```gdscript
+# 在卡包子类中重写after_recipe_done方法
+func after_recipe_done(card_instance, crafting_cards: Array):
+    # card_instance: 当前卡牌实例
+    # crafting_cards: 参与合成的所有卡牌列表
+    
+    # 实现自定义逻辑，例如计数器
+    recipe_count += 1
+    GlobalUtil.log("卡包参与合成，当前计数: " + str(recipe_count), GlobalUtil.LogLevel.INFO)
+    
+    # 达到条件时自动回收
+    if recipe_count >= 3:
+        CardUtil.remove(card_instance)
+```
+
+**土堆卡包示例**：
+- 内置合成计数器，每次参与合成时递增
+- 合成3次后自动调用`CardUtil.remove()`回收自身
+- 展示了如何在卡包中实现特殊的合成后逻辑
 
 ## 扩展说明
 

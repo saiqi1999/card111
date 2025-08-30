@@ -6,6 +6,9 @@ func _init():
 	# 调用父类的初始化函数，设置名称和描述
 	super._init("小魔法气息", "微弱的魔法能量，可以提供基础魔法支持")
 	
+	# 设置卡牌类型标识符
+	card_type = "small_magic_aura"
+	
 	# 覆盖父类的pack_image变量
 	pack_image = preload("res://assets/images/魔法气息小.png")
 	

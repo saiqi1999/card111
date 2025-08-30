@@ -22,8 +22,8 @@ const DEFAULT_MOVE_DURATION: float = 0.65  # 默认移动动画时长
 const SLIDE_DURATION: float = 2.0  # 滑动动画时长
 
 # 随机移动相关常量
-const RANDOM_MOVE_RANGE: int = 300  # 随机移动范围
-const CENTER_AVOID_RANGE: int = 150  # 中心避让范围
+const RANDOM_MOVE_RANGE: int = 500  # 随机移动范围
+const CENTER_AVOID_RANGE: int = 350  # 中心避让范围
 
 # 屏幕相关常量
 const SCREEN_CENTER: Vector2 = Vector2(960, 540)  # 屏幕中心位置
@@ -47,6 +47,10 @@ const CTRL_WIDTH_RATIO: float = 4.0  # 控制器宽度比例
 const CTRL_HEIGHT_RATIO: float = 3.0  # 控制器高度比例
 const CTRL_WIDTH: float = CTRL_UNIT * CTRL_WIDTH_RATIO  # 控制器宽度（400）
 const CTRL_HEIGHT: float = CTRL_UNIT * CTRL_HEIGHT_RATIO  # 控制器高度（300）
+
+# 配方合成相关常量
+const DEFAULT_CRAFT_TIME: float = 5.0  # 默认合成时间（秒）
+const RECIPE_CHECK_INTERVAL: float = 0.1  # 合成进度检查间隔（秒）
 
 # 小控制器UI布局常量
 const CTRL_MARGIN: float = 100.0  # 控制器边缘距离
