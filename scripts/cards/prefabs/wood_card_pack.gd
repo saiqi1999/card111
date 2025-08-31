@@ -1,5 +1,7 @@
 extends "res://scripts/cards/card_pack_base.gd"
 # 木材卡包
+# 导入卡牌工具类
+const CardUtil = preload("res://scripts/cards/card_util.gd")
 
 # 初始化函数
 func _init():
@@ -27,3 +29,9 @@ func wood_click_effect(card_instance):
 	
 	# 木材的特效逻辑
 	GlobalUtil.log("木材：坚实的木材，散发着自然的香气，是建造的重要材料", GlobalUtil.LogLevel.INFO)
+
+# 重写合成完成后的回调方法
+func after_recipe_done(card_instance, crafting_cards: Array):
+	GlobalUtil.log("木材卡包参与合成，开始回收", GlobalUtil.LogLevel.INFO)
+	# 通过卡牌实例访问 CardUtil 的静态方法
+	CardUtil.remove(card_instance)

@@ -9,7 +9,15 @@ extends Node
 # - craft_time: float - 合成时长（秒）
 var RECIPES: Array[String] = [
 	# 铲子 + 土堆 = 基础花盆
-	'{"ingredients": ["iron_shovel", "dirt_pile"], "products": ["primary_flower_pot"], "craft_time": 5.0}'
+	'{"ingredients": ["iron_shovel", "dirt_pile"], "products": ["primary_flower_pot"], "craft_time": 5.0}',
+	# 木材 + 燧石 = 铁斧
+	'{"ingredients": ["wood", "flint"], "products": ["iron_axe"], "craft_time": 3.0}',
+	# 木材 + 2燧石 = 十字镐
+	'{"ingredients": ["wood", "flint", "flint"], "products": ["pickaxe"], "craft_time": 4.0}',
+	# 碎木堆 + 铁斧 = 木材
+	'{"ingredients": ["wood_scraps", "iron_axe"], "products": ["wood"], "craft_time": 2.0}',
+	# 石堆 + 十字镐 = 由回调函数处理生成
+	'{"ingredients": ["stone_pile", "pickaxe"], "products": [], "craft_time": 2.0}'
 ]
 
 # 获取所有配方数据

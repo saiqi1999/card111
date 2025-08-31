@@ -15,12 +15,12 @@ var stack_progress_bars: Dictionary = {}  # 堆叠进度条映射 {stack_id: pro
 class Recipe:
 	var ingredients: Array[String] = []  # 参与合成的卡牌类型
 	var craft_time: float = 0.0  # 合成时间（秒）
-	var result_type: String = ""  # 合成产物类型
+	var result_types: Array[String] = []  # 合成产物类型列表
 	
-	func _init(p_ingredients: Array[String], p_craft_time: float, p_result_type: String):
+	func _init(p_ingredients: Array[String], p_craft_time: float, p_result_types: Array[String]):
 		ingredients = p_ingredients
 		craft_time = p_craft_time
-		result_type = p_result_type
+		result_types = p_result_types
 
 # 正在进行的合成任务
 class CraftingTask:
@@ -48,7 +48,7 @@ class CraftingTask:
 	
 	# 合成完成回调
 	func _on_crafting_complete():
-		GlobalUtil.log("合成任务计时器触发完成: " + str(recipe.ingredients) + " -> " + recipe.result_type, GlobalUtil.LogLevel.INFO)
+		GlobalUtil.log("合成任务计时器触发完成: " + str(recipe.ingredients) + " -> " + str(recipe.result_types), GlobalUtil.LogLevel.INFO)
 		recipe_util_ref._complete_crafting_task(self)
 	
 	# 获取剩余时间
@@ -90,27 +90,29 @@ func load_recipes_from_constant():
 	var recipe_data_list = RecipeConstant.get_all_recipes()
 	for recipe_data in recipe_data_list:
 		if recipe_data.has("ingredients") and recipe_data.has("products") and recipe_data.has("craft_time"):
-			# 目前只支持单一产出，取products数组的第一个元素
-			var result_type = recipe_data.products[0] if recipe_data.products.size() > 0 else ""
+			# 支持多个产出
+			var result_types: Array[String] = []
+			for product in recipe_data.products:
+				result_types.append(str(product))
 			# 将普通Array转换为Array[String]类型
 			var ingredients_typed: Array[String] = []
 			for ingredient in recipe_data.ingredients:
 				ingredients_typed.append(str(ingredient))
-			var recipe = Recipe.new(ingredients_typed, recipe_data.craft_time, result_type)
+			var recipe = Recipe.new(ingredients_typed, recipe_data.craft_time, result_types)
 			recipes.append(recipe)
-			GlobalUtil.log("从RecipeConstant加载配方: " + str(recipe_data.ingredients) + " -> " + result_type + " (" + str(recipe_data.craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
+			GlobalUtil.log("从RecipeConstant加载配方: " + str(recipe_data.ingredients) + " -> " + str(result_types) + " (" + str(recipe_data.craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
 		else:
 			GlobalUtil.log("配方数据格式错误，跳过: " + str(recipe_data), GlobalUtil.LogLevel.ERROR)
 
 # 注册新配方
-func register_recipe(ingredients: Array[String], craft_time: float, result_type: String):
-	var recipe = Recipe.new(ingredients, craft_time, result_type)
+func register_recipe(ingredients: Array[String], craft_time: float, result_types: Array[String]):
+	var recipe = Recipe.new(ingredients, craft_time, result_types)
 	recipes.append(recipe)
 	
 	# 同时添加到RecipeConstant中
-	RecipeConstant.add_recipe(ingredients, [result_type], craft_time)
+	RecipeConstant.add_recipe(ingredients, result_types, craft_time)
 	
-	GlobalUtil.log("注册配方: " + str(ingredients) + " -> " + result_type + " (" + str(craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("注册配方: " + str(ingredients) + " -> " + str(result_types) + " (" + str(craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
 
 # 检查堆叠是否匹配某个配方
 func check_stack_for_recipe(stack_cards: Array) -> Recipe:
@@ -130,7 +132,7 @@ func check_stack_for_recipe(stack_cards: Array) -> Recipe:
 	# 检查是否匹配任何配方
 	for recipe in recipes:
 		if _arrays_match(card_types, recipe.ingredients):
-			GlobalUtil.log("找到匹配的配方: " + str(card_types) + " -> " + recipe.result_type, GlobalUtil.LogLevel.INFO)
+			GlobalUtil.log("找到匹配的配方: " + str(card_types) + " -> " + str(recipe.result_types), GlobalUtil.LogLevel.INFO)
 			return recipe
 	
 	GlobalUtil.log("未找到匹配的配方，卡牌类型: " + str(card_types), GlobalUtil.LogLevel.DEBUG)
@@ -166,7 +168,7 @@ func start_crafting(stack_cards: Array, stack_id: String) -> bool:
 	var crafting_task = CraftingTask.new(recipe, stack_cards, stack_id, self)
 	active_crafting_tasks.append(crafting_task)
 	
-	GlobalUtil.log("开始合成: " + str(recipe.ingredients) + " -> " + recipe.result_type + " (堆叠ID: " + stack_id + ")", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("开始合成: " + str(recipe.ingredients) + " -> " + str(recipe.result_types) + " (堆叠ID: " + stack_id + ")", GlobalUtil.LogLevel.INFO)
 	return true
 
 # 完成合成任务（由计时器触发）
@@ -182,28 +184,49 @@ func _complete_crafting_task(task: CraftingTask):
 
 # 完成合成
 func _complete_crafting(task: CraftingTask):
-	GlobalUtil.log("合成完成: " + str(task.recipe.ingredients) + " -> " + task.recipe.result_type, GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("合成完成: " + str(task.recipe.ingredients) + " -> " + str(task.recipe.result_types), GlobalUtil.LogLevel.INFO)
 	
 	# 隐藏进度条
 	hide_progress_bar_for_stack(int(task.stack_id))
 	
-	# 这里需要根据result_type创建对应的卡牌
-	_create_result_card(task.recipe.result_type, task.cards[0].global_position)
+	# 创建所有产物卡牌
+	_create_result_cards(task.recipe.result_types, task.cards[0].global_position)
+	
+	# 复制一份卡牌列表，避免在遍历过程中修改列表
+	var cards_copy = task.cards.duplicate()
 	
 	# 调用参与合成卡牌的 after_recipe_done 方法
-	for card in task.cards:
-		if card.card_pack and card.card_pack.has_method("after_recipe_done"):
-			GlobalUtil.log("调用卡牌包 " + card.card_pack.card_name + " 的 after_recipe_done 方法", GlobalUtil.LogLevel.DEBUG)
-			card.card_pack.after_recipe_done(card, task.cards)
-		else:
-			GlobalUtil.log("卡牌 " + str(card.get_instance_id()) + " 没有关联的卡牌包或 after_recipe_done 方法", GlobalUtil.LogLevel.DEBUG)
+	for card in cards_copy:
+		if card == null or not is_instance_valid(card):
+			GlobalUtil.log("发现无效的卡牌实例", GlobalUtil.LogLevel.INFO)
+			continue
+		
+		# 检查卡牌是否有get方法
+		if not card.has_method("get"):
+			GlobalUtil.log("卡牌 " + str(card.get_instance_id()) + " 没有get方法", GlobalUtil.LogLevel.INFO)
+			continue
+		
+		# 获取卡牌包
+		var card_pack = card.get("card_pack")
+		if card_pack == null:
+			GlobalUtil.log("卡牌 " + str(card.get_instance_id()) + " 没有关联的卡牌包", GlobalUtil.LogLevel.INFO)
+			continue
+		
+		# 检查卡牌包是否有after_recipe_done方法
+		if not card_pack.has_method("after_recipe_done"):
+			GlobalUtil.log("卡牌 " + str(card.get_instance_id()) + " 的卡牌包没有 after_recipe_done 方法", GlobalUtil.LogLevel.INFO)
+			continue
+		
+		# 调用after_recipe_done方法
+		GlobalUtil.log("调用卡牌包 " + card_pack.pack_name + " 的 after_recipe_done 方法", GlobalUtil.LogLevel.INFO)
+		card_pack.after_recipe_done(card, cards_copy)
 	
 	# 合成完成后，重新检查堆叠是否仍能继续合成
 	_check_stack_for_continued_crafting(task.stack_id)
 
 # 创建合成产物
-func _create_result_card(result_type: String, position: Vector2):
-	GlobalUtil.log("创建合成产物: " + result_type + " 位置: " + str(position), GlobalUtil.LogLevel.INFO)
+func _create_result_cards(result_types: Array[String], position: Vector2):
+	GlobalUtil.log("创建合成产物，类型: " + str(result_types) + " 位置: " + str(position), GlobalUtil.LogLevel.INFO)
 	
 	# 获取根节点（通过场景树）
 	var root_node = get_tree().current_scene
@@ -213,16 +236,19 @@ func _create_result_card(result_type: String, position: Vector2):
 	
 	# 使用CardUtil创建卡牌
 	var CardUtil = preload("res://scripts/cards/card_util.gd")
-	var result_card = CardUtil.create_card_from_pool(root_node, result_type, position)
 	
-	if result_card != null:
-		GlobalUtil.log("成功创建合成产物: " + result_type, GlobalUtil.LogLevel.INFO)
+	# 创建每个产物
+	for result_type in result_types:
+		var result_card = CardUtil.create_card_from_pool(root_node, result_type, position)
 		
-		# 对合成产物进行随机移动
-		var move_distance = CardUtil.random_move_card(result_card)
-		GlobalUtil.log("合成产物随机移动距离: " + str(move_distance), GlobalUtil.LogLevel.INFO)
-	else:
-		GlobalUtil.log("创建合成产物失败: " + result_type, GlobalUtil.LogLevel.ERROR)
+		if result_card != null:
+			GlobalUtil.log("成功创建合成产物: " + result_type, GlobalUtil.LogLevel.INFO)
+			
+			# 对合成产物进行随机移动
+			var move_distance = CardUtil.random_move_card(result_card)
+			GlobalUtil.log("合成产物随机移动距离: " + str(move_distance), GlobalUtil.LogLevel.INFO)
+		else:
+			GlobalUtil.log("创建合成产物失败: " + result_type, GlobalUtil.LogLevel.ERROR)
 
 # 获取正在进行的合成任务信息
 func get_active_crafting_info() -> Array[Dictionary]:
@@ -231,7 +257,7 @@ func get_active_crafting_info() -> Array[Dictionary]:
 		info.append({
 			"stack_id": task.stack_id,
 			"recipe": task.recipe.ingredients,
-			"result": task.recipe.result_type,
+			"results": task.recipe.result_types,
 			"progress": task.get_progress(),
 			"remaining_time": task.get_remaining_time()
 		})

@@ -4,7 +4,7 @@ extends Resource
 class_name GlobalConstants
 
 # 卡牌池相关常量
-const CARD_POOL_SIZE: int = 5  # 卡牌池大小
+const CARD_POOL_SIZE: int = 33  # 卡牌池大小
 const CARD_POOL_HIDDEN_POSITION: Vector2 = Vector2(-1000, -1000)  # 卡牌池隐藏位置
 
 # 日志系统相关常量
@@ -26,8 +26,8 @@ const RANDOM_MOVE_RANGE: int = 500  # 随机移动范围
 const CENTER_AVOID_RANGE: int = 350  # 中心避让范围
 
 # 屏幕相关常量
-const SCREEN_CENTER: Vector2 = Vector2(960, 540)  # 屏幕中心位置
-const SCREEN_LEFT_OUTSIDE: Vector2 = Vector2(-200, 540)  # 屏幕左侧外部位置
+const SCREEN_CENTER: Vector2 = Vector2(1920, 1080)  # 屏幕中心位置（4K分辨率下的中心点）
+const SCREEN_LEFT_OUTSIDE: Vector2 = Vector2(-200, 1080)  # 屏幕左侧外部位置
 
 # 重叠测试相关常量
 const OVERLAP_TEST_COUNT: int = 5  # 重叠测试卡牌数量
@@ -78,6 +78,12 @@ const CAMERA_ZOOM_MIN: float = 0.5  # 相机最小缩放
 const CAMERA_ZOOM_MAX: float = 3.0  # 相机最大缩放
 const CAMERA_ZOOM_SPEED: float = 0.1  # 相机缩放速度
 const CAMERA_DRAG_SPEED: float = 1.0  # 相机拖拽速度
+
+# 区域管理相关常量
+const CAMERA_MOVE_BOUNDS_MIN: Vector2 = Vector2(1700, 1000)  # 相机移动范围最小值
+const CAMERA_MOVE_BOUNDS_SIZE: Vector2 = Vector2(400, 400)  # 相机移动范围尺寸
+const CARD_MOVE_BOUNDS_MIN: Vector2 = Vector2(1000, 700)  # 卡牌移动范围最小值
+const CARD_MOVE_BOUNDS_SIZE: Vector2 = Vector2(1400, 1000)  # 卡牌移动范围尺寸
 
 # 获取所有常量的字典表示（用于调试）
 static func get_all_constants() -> Dictionary:

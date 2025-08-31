@@ -4,8 +4,9 @@ class_name CameraCtrl
 # 相机控制器类
 # 提供可拖拽和缩放的2D相机功能，服务于root节点
 
-# 预加载CardUtil类
+# 预加载工具类
 const CardUtil = preload("res://scripts/cards/card_util.gd")
+const AreaUtil = preload("res://scripts/utils/area_util.gd")
 
 # 拖拽相关变量
 var is_dragging: bool = false
@@ -74,8 +75,11 @@ func update_camera_position(current_mouse_pos: Vector2):
 	# 根据当前缩放调整移动速度（缩放越大，移动越慢）
 	var adjusted_delta = mouse_delta * GlobalConstants.CAMERA_DRAG_SPEED / current_zoom.x
 	
-	# 更新相机位置（注意方向相反，因为相机移动与视野移动方向相反）
-	position = camera_start_position - adjusted_delta
+	# 计算新位置（注意方向相反，因为相机移动与视野移动方向相反）
+	var new_position = camera_start_position - adjusted_delta
+	
+	# 使用AreaUtil限制相机位置在允许范围内
+	position = AreaUtil.clamp_camera_position(new_position)
 
 # 放大
 func zoom_in():

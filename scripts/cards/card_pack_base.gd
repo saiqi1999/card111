@@ -19,14 +19,10 @@ func _init(p_name: String = "基础卡包", p_description: String = "基础卡�
 	pack_name = p_name
 	description = p_description
 
-
-
 # 设置卡牌数据
 func set_card_data(p_name: String, p_description: String):
 	card_name = p_name
 	card_description = p_description
-
-
 
 # 获取卡牌数据
 func get_card_data() -> Dictionary:
@@ -36,6 +32,12 @@ func get_card_data() -> Dictionary:
 		"image": pack_image,
 		"on_click": on_click
 	}
+
+# 初始化完成后的回调方法
+# 子类可以重写此方法来实现特定的初始化后逻辑
+# card_instance: 当前卡牌实例
+func after_init(card_instance):
+	pass
 
 # 合成完成后的回调方法
 # 子类可以重写此方法来实现特定的合成后逻辑

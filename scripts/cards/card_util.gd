@@ -3,6 +3,9 @@ extends Node2D
 # 卡牌工具组件
 # 用于显示卡牌的视觉表现和提供卡牌相关工具函数
 
+# 预加载工具类
+const AreaUtil = preload("res://scripts/utils/area_util.gd")
+
 # 确保StackUtil可用（虽然它是autoload，但明确引用以避免IDE警告）
 # StackUtil已在project.godot中注册为autoload单例
 
@@ -249,7 +252,13 @@ func load_from_card_type(type_name: String):
 		card_type = type_name
 	
 	# 加载卡包数据
-	return load_from_card_pack(pack)
+	var result = load_from_card_pack(pack)
+	
+	# 调用after_init方法
+	if result and card_pack != null:
+		card_pack.after_init(self)
+	
+	return result
 
 # 通过类型字符串获取卡包实例
 static func get_card_pack_by_type(type_name: String) -> CardPackBase:
@@ -299,6 +308,9 @@ static func move_card(card_instance: Node2D, target_position: Vector2, duration:
 		if old_tween.is_valid():
 			old_tween.kill()
 	
+	# 限制目标位置在允许范围内
+	target_position = AreaUtil.clamp_card_position(target_position)
+	
 	# 创建Tween动画
 	var tween = card_instance.create_tween()
 	tween.set_trans(Tween.TRANS_QUART)
@@ -329,6 +341,9 @@ static func random_move_card(card_instance: Node2D):
 	
 	# 计算目标位置（相对当前位置）
 	var target_position = card_instance.position + random_vector
+	
+	# 限制目标位置在允许范围内
+	target_position = AreaUtil.clamp_card_position(target_position)
 	
 	# 调用move_card方法移动卡牌
 	move_card(card_instance, target_position, GlobalConstants.DEFAULT_MOVE_DURATION)
@@ -509,12 +524,15 @@ func _process(_delta):
 				has_brought_to_front = true
 				GlobalUtil.log("检测到拖动行为，将卡牌组移到最前面，主卡牌+连带卡牌数量:" + str(1 + dragging_cards.size()), GlobalUtil.LogLevel.DEBUG)
 		
-		global_position = get_global_mouse_position() + drag_offset
+		# 使用AreaUtil限制卡牌位置在允许范围内
+		var new_position = get_global_mouse_position() + drag_offset
+		global_position = AreaUtil.clamp_card_position(new_position)
 		
 		# 更新连带拖拽卡牌的位置
 		for card in dragging_cards:
 			if card != null and is_instance_valid(card):
-				card.global_position = global_position + card.drag_offset
+				var card_new_position = global_position + card.drag_offset
+				card.global_position = AreaUtil.clamp_card_position(card_new_position)
 
 # 鼠标进入事件 - 显示ctrl窗口
 func _on_mouse_entered():
@@ -652,7 +670,7 @@ static func remove(card: Node2D):
 	GlobalUtil.log("卡牌已移除并返回池中，ID: " + str(card.get_instance_id()), GlobalUtil.LogLevel.DEBUG)
 	GlobalUtil.log("卡牌已返回池中，池大小: " + str(card_pool.size()), GlobalUtil.LogLevel.DEBUG)
 
-# 瞬移卡牌到目标位置
+# 瞬移卡牌到目标位置，这个不限制位置，方便场景布置和扩张
 static func goto_card(card: Node2D, target_position: Vector2):
 	if card == null or not is_instance_valid(card):
 		GlobalUtil.log("goto_card: 无效的卡牌实例", GlobalUtil.LogLevel.ERROR)

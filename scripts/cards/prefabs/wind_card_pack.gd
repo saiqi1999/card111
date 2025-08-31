@@ -1,5 +1,8 @@
-extends "res://scripts/cards/card_pack_base.gd"
+extends CardPackBase
 # 刮风卡包
+
+# 回收定时器
+var recycle_timer: Timer = null
 
 # 初始化函数
 func _init():
@@ -27,3 +30,41 @@ func wind_click_effect(card_instance):
 	
 	# 刮风的特效逻辑
 	GlobalUtil.log("刮风：清风徐来，驱散周围的阴霾", GlobalUtil.LogLevel.INFO)
+
+# 创建并启动回收定时器
+func start_recycle_timer(card_instance):
+	# 创建定时器
+	recycle_timer = Timer.new()
+	card_instance.add_child(recycle_timer)
+	
+	# 设置定时器参数
+	recycle_timer.one_shot = true
+	recycle_timer.wait_time = 120
+	
+	# 连接定时器信号
+	recycle_timer.timeout.connect(func(): recycle_card(card_instance))
+	
+	# 启动定时器
+	recycle_timer.start()
+	
+	# 打印日志
+	GlobalUtil.log("刮风卡牌实例ID:" + str(card_instance.get_instance_id()) + " 启动回收定时器", GlobalUtil.LogLevel.INFO)
+
+# 回收卡牌
+func recycle_card(card_instance):
+	# 打印日志
+	GlobalUtil.log("刮风卡牌实例ID:" + str(card_instance.get_instance_id()) + " 定时回收", GlobalUtil.LogLevel.INFO)
+	
+	# 移除定时器
+	if recycle_timer:
+		recycle_timer.queue_free()
+		recycle_timer = null
+	
+	# 回收卡牌
+	card_instance.queue_free()
+
+# 重写after_init方法
+func after_init(card_instance):
+	super.after_init(card_instance)
+	# 启动回收定时器
+	start_recycle_timer(card_instance)

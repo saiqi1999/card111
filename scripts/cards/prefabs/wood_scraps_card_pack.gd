@@ -1,5 +1,9 @@
 extends "res://scripts/cards/card_pack_base.gd"
 # 碎木头卡包
+# 导入卡牌工具类
+const CardUtil = preload("res://scripts/cards/card_util.gd")
+# 合成计数器
+var recipe_count: int = 0
 
 # 初始化函数
 func _init():
@@ -28,3 +32,14 @@ func wood_scraps_click_effect(card_instance):
 	# 碎木头的特效逻辑
 	var wood_amount = randi() % 4 + 2  # 生成2-5的随机木材数量
 	GlobalUtil.log("碎木头：获得 " + str(wood_amount) + " 单位木材，可用于制作或燃烧", GlobalUtil.LogLevel.INFO)
+
+# 重写合成完成后的回调方法
+func after_recipe_done(card_instance, crafting_cards: Array):
+	recipe_count += 1
+	GlobalUtil.log("碎木头卡包参与合成，当前计数: " + str(recipe_count), GlobalUtil.LogLevel.INFO)
+	
+	# 3次合成后回收自己
+	if recipe_count >= 3:
+		GlobalUtil.log("碎木头卡包达到3次合成，开始回收", GlobalUtil.LogLevel.INFO)
+		# 通过卡牌实例访问 CardUtil 的静态方法
+		CardUtil.remove(card_instance)

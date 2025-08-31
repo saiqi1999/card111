@@ -1,111 +1,70 @@
 # 卡包预制体文件夹 (Card Pack Prefabs)
 
-此文件夹包含各种卡包的预制体脚本文件。
+此文件夹包含各种卡包的预制体脚本文件。每个卡包都继承自`CardPackBase`基类，并可以自定义卡牌的创建、交互和回收逻辑。
 
-## 文件结构
+## 卡牌生命周期
 
-- `strike_card_pack.gd` - 打击卡包类，继承自卡包基类
-- `defend_card_pack.gd` - 防御卡包类，继承自卡包基类
-- `want_slime_card_pack.gd` - Want Slime卡包类，继承自卡包基类
-- `basic_skill_pack_card_pack.gd` - Basic Skill Pack卡包类，继承自卡包基类
+### 1. 卡牌创建
+- 通过`CardUtil.create_card_from_pool`创建卡牌，该方法会：
+  1. 从卡牌池获取或创建新的卡牌实例
+  2. 加载对应类型的卡包数据
+  3. 调用卡包的`after_init`方法进行初始化
+  4. 将卡牌移动到指定位置（带边界检查）
 
-## 卡包说明
+### 2. 卡牌回收
+卡牌可以通过以下方式被回收：
+1. **自动回收**：某些卡牌（如天气卡）会在创建时启动定时器，到时自动回收
+2. **条件回收**：某些卡牌（如Basic Skill Pack）在达到特定条件后自动回收
+3. **合成回收**：某些卡牌（如碎木头、土堆）在参与一定次数的合成后回收
+4. **手动回收**：通过调用`CardUtil.remove(card_instance)`手动回收
 
-### 打击卡包 (StrikeCardPack)
+回收时，卡牌会：
+- 从堆叠中移除
+- 注销全局注册
+- 重置状态
+- 返回到卡牌池中
 
-`strike_card_pack.gd` 实现了打击卡牌的基本功能：
+## 特殊卡牌示例
 
-- **卡牌属性**：
-  - 名称：打击
-  - 描述：造成6点伤害
-  - 图像：strike.png
-
-- **特殊功能**：
-  - 点击特效：打印卡牌实例ID和1-100的随机数
-  - 继承自卡包基类的所有基础功能
-
-#### 使用示例
-
+### 天气卡牌（雨、风）
 ```gdscript
-# 通过CardUtil获取打击卡包
-var strike_pack = CardUtil.get_card_pack_by_type("strike")
-
-# 创建打击卡牌
-var card_instance = CardUtil.create_card_from_pool(root_node, "strike", Vector2(100, 100))
+# 创建时自动启动回收定时器
+func after_init(card_instance):
+    start_recycle_timer(card_instance)
 ```
 
-### 防御卡包 (DefendCardPack)
-
-`defend_card_pack.gd` 实现了防御卡牌的基本功能：
-
-- **卡牌属性**：
-  - 名称：防御
-  - 描述：获得5点护甲
-  - 图像：defend.jpg
-
-- **特殊功能**：
-  - 点击特效：打印卡牌实例ID和获得的护甲值
-  - 继承自卡包基类的所有基础功能
-
-#### 使用示例
-
+### 资源卡牌（碎木头、土堆）
 ```gdscript
-# 通过CardUtil获取防御卡包
-var defend_pack = CardUtil.get_card_pack_by_type("defend")
-
-# 创建防御卡牌
-var card_instance = CardUtil.create_card_from_pool(root_node, "defend", Vector2(100, 100))
+# 在合成3次后自动回收
+func after_recipe_done(card_instance, crafting_cards: Array):
+    recipe_count += 1
+    if recipe_count >= 3:
+        CardUtil.remove(card_instance)
 ```
 
-### Want Slime卡包 (WantSlimeCardPack)
-
-`want_slime_card_pack.gd` 实现了召唤史莱姆卡牌的功能：
-
-- **卡牌属性**：
-  - 名称：Want Slime
-  - 描述：召唤一只可爱的史莱姆
-  - 图像：wantSlime.jpg
-
-- **特殊功能**：
-  - 点击特效：随机生成史莱姆属性（生命值5-14，攻击力1-3）
-  - 继承自卡包基类的所有基础功能
-
-#### 使用示例
-
+### 生成器卡牌（Basic Skill Pack）
 ```gdscript
-# 通过CardUtil获取Want Slime卡包
-var slime_pack = CardUtil.get_card_pack_by_type("want_slime")
-
-# 创建Want Slime卡牌
-var card_instance = CardUtil.create_card_from_pool(root_node, "want_slime", Vector2(100, 100))
+# 生成指定数量的卡牌后自动回收
+func basic_skill_pack_click_effect(card_instance):
+    if generated_cards_count >= MAX_GENERATED_CARDS:
+        CardUtil.remove(card_instance)
 ```
 
-### Basic Skill Pack卡包 (BasicSkillPackCardPack)
+## 创建新卡牌类型
 
-`basic_skill_pack_card_pack.gd` 实现了卡牌生成器的功能：
+1. 创建新的卡包脚本文件，继承`CardPackBase`
+2. 实现必要的初始化逻辑：
+   - 设置卡牌基本信息（名称、描述、图片）
+   - 设置卡牌类型标识符
+   - 定义点击效果（可选）
+3. 根据需要重写生命周期方法：
+   - `after_init`：卡牌创建后的初始化逻辑
+   - `after_recipe_done`：参与合成后的处理逻辑
 
-- **卡牌属性**：
-  - 名称：Basic Skill Pack
-  - 描述：生成随机卡牌并移动
-  - 图像：basicSkillPack.jpg
+## 注意事项
 
-- **特殊功能**：
-  - 点击特效：从当前位置生成随机的打击或防御卡牌
-  - 生成的卡牌会自动随机移动到非中心区域
-  - 内置计数器：生成5张卡牌后自动回收到卡牌池
-  - 生成的卡牌命名为"技能包生成[类型] #[序号]"
-  - 继承自卡包基类的所有基础功能
-
-#### 使用示例
-
-```gdscript
-# 通过CardUtil获取Basic Skill Pack卡包
-var skill_pack = CardUtil.get_card_pack_by_type("basic_skill_pack")
-
-# 创建Basic Skill Pack卡牌
-var card_instance = CardUtil.create_card_from_pool(root_node, "basic_skill_pack", Vector2(100, 100))
-```
-
-## 扩展说明
-
-当需要添加新的卡包类型时，可以在此文件夹中创建新的卡包脚本文件，并在 `card_util.gd` 的 `get_card_pack_by_type()` 方法中添加对应的加载逻辑。新卡牌类型会自动被调试系统的 `random2` 命令包含。
+1. 创建卡牌时优先使用`create_card_from_pool`而不是直接实例化，以利用卡牌池系统
+2. 回收卡牌时使用`CardUtil.remove`而不是直接删除节点，确保正确返回到卡牌池
+3. 在重写生命周期方法时，注意调用父类方法：`super.after_init(card_instance)`
+4. 自定义回收逻辑时，确保正确清理所有资源（如定时器）
+5. 移动卡牌时使用`CardUtil`提供的移动方法，确保位置在有效范围内
