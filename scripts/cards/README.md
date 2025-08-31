@@ -5,8 +5,37 @@
 ## 文件结构
 
 - `card_pack_base.gd` - 卡包基类，定义了卡包的基本属性和方法
-- `prefabs/` - 卡包预制体文件夹
-  - `strike_card_pack.gd` - 打击卡包类，继承自卡包基类，使用strike.png作为图片
+- `prefabs/` - 卡包预制体文件夹（包含30个卡牌预制件）
+  - `strike_card_pack.gd` - 打击卡包类
+  - `defend_card_pack.gd` - 防御卡包类
+  - `blueberry_card_pack.gd` - 蓝莓卡包类
+  - `basic_skill_pack_card_pack.gd` - 基础技能包卡包类
+  - `want_slime_card_pack.gd` - Want Slime卡包类
+  - `rain_card_pack.gd` - 下雨卡包类
+  - `wind_card_pack.gd` - 刮风卡包类
+  - `guide_book_card_pack.gd` - 向导之书卡包类
+  - `earth_mystery_level0_card_pack.gd` - 地元素奥秘0级卡包类
+  - `earth_mystery_level1_card_pack.gd` - 地元素奥秘1级卡包类
+  - `strange_stone_pile_card_pack.gd` - 奇怪石堆卡包类
+  - `stone_pile_card_pack.gd` - 石堆卡包类
+  - `wood_card_pack.gd` - 木材卡包类
+  - `inactive_mystery_card_pack.gd` - 未激活的奥秘卡包类
+  - `water_mystery_level0_card_pack.gd` - 水元素奥秘0级卡包类
+  - `flint_card_pack.gd` - 燧石卡包类
+  - `stone_card_pack.gd` - 石块卡包类
+  - `dirt_pile_card_pack.gd` - 土堆卡包类
+  - `iron_axe_card_pack.gd` - 铁斧卡包类
+  - `iron_shovel_card_pack.gd` - 铁铲卡包类
+  - `large_blueberry_bush_card_pack.gd` - 大蓝莓丛卡包类
+  - `large_magic_aura_card_pack.gd` - 大魔法气息卡包类
+  - `old_wooden_house_card_pack.gd` - 旧木屋卡包类
+  - `pickaxe_card_pack.gd` - 十字镐卡包类
+  - `primary_flower_pot_card_pack.gd` - 初级花盆卡包类
+  - `sickle_card_pack.gd` - 镰刀卡包类
+  - `small_blueberry_bush_card_pack.gd` - 小蓝莓丛卡包类
+  - `small_magic_aura_card_pack.gd` - 小魔法气息卡包类
+  - `forest_road_card_pack.gd` - 森林道路卡包类
+  - `wood_scraps_card_pack.gd` - 碎木头卡包类
 - `card_util.gd` - 卡牌工具脚本，用于显示卡牌的视觉表现和提供卡牌相关工具函数
 
 ## 使用说明

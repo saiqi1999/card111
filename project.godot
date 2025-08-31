@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 Ctrl400x300="*res://scripts/ctrl/prefabs/ctrl_400_300.gd"
 RecipeConstant="*res://scripts/utils/recipe_constant.gd"
 RecipeUtil="*res://scripts/utils/recipe_util.gd"
+StackUtil="*res://scripts/utils/stack_util.gd"
 
 [display]
 

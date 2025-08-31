@@ -135,6 +135,13 @@ func _on_input_field_text_submitted(text: String):
 		
 		# 清空输入框
 		input_field.text = ""
+	elif text.to_lower() == "listall":
+		# 扫描所有prefabs并生成卡牌实例
+		GlobalUtil.log("扫描所有卡牌prefabs并生成实例...", GlobalUtil.LogLevel.INFO)
+		create_all_prefab_cards()
+		
+		# 清空输入框
+		input_field.text = ""
 	else:
 		# 尝试根据前缀创建卡牌
 		var card_created = create_card_by_prefix(text)
@@ -446,3 +453,74 @@ func create_card_by_prefix(prefix: String) -> bool:
 	# 没有找到匹配的前缀
 	GlobalUtil.log("未找到匹配的卡牌前缀：" + prefix, GlobalUtil.LogLevel.WARNING)
 	return false
+
+# 扫描所有prefabs并生成卡牌实例的方法
+func create_all_prefab_cards():
+	# 确保卡牌池已初始化
+	CardUtil.initialize_card_pool(root_node)
+	
+	# 获取prefabs目录路径
+	var prefabs_dir = "res://scripts/cards/prefabs/"
+	
+	# 打开目录
+	var dir = DirAccess.open(prefabs_dir)
+	if dir == null:
+		GlobalUtil.log("无法打开prefabs目录：" + prefabs_dir, GlobalUtil.LogLevel.ERROR)
+		return
+	
+	# 获取所有.gd文件
+	var prefab_files = []
+	dir.list_dir_begin()
+	var current_file = dir.get_next()
+	
+	while current_file != "":
+		# 只处理.gd文件，排除README.md和.uid文件
+		if current_file.ends_with(".gd") and not current_file.ends_with("_card_pack.gd.uid"):
+			prefab_files.append(current_file)
+		current_file = dir.get_next()
+	
+	dir.list_dir_end()
+	
+	# 排序文件名以保证一致的显示顺序
+	prefab_files.sort()
+	
+	GlobalUtil.log("找到 " + str(prefab_files.size()) + " 个prefab文件", GlobalUtil.LogLevel.INFO)
+	
+	# 计算卡牌布局参数
+	var cards_per_row = 17  # 每行17个卡牌
+	var card_width = GlobalConstants.CARD_WIDTH  # 卡牌宽度
+	var card_spacing = 10  # 卡牌间距
+	var row_height = GlobalConstants.CARD_HEIGHT + 20  # 行高
+	var start_x = 50  # 起始X坐标
+	var start_y = 50  # 起始Y坐标
+	
+	# 遍历所有prefab文件并创建卡牌实例
+	for i in range(prefab_files.size()):
+		var file_name = prefab_files[i]
+		
+		# 从文件名提取卡牌类型（移除_card_pack.gd后缀）
+		var card_type = file_name.replace("_card_pack.gd", "")
+		
+		# 计算卡牌位置
+		var row = i / cards_per_row
+		var col = i % cards_per_row
+		var x = start_x + col * (card_width + card_spacing)
+		var y = start_y + row * row_height
+		var position = Vector2(x, y)
+		
+		# 创建卡牌实例
+		var card_instance = CardUtil.create_card_from_pool(root_node, card_type, position)
+		
+		if card_instance:
+			# 设置卡牌名称
+			card_count += 1
+			card_instance.card_name = card_type + " #" + str(card_count)
+			
+			# 更新显示
+			card_instance.update_display()
+			
+			GlobalUtil.log("创建卡牌：" + card_type + " 位置：" + str(position), GlobalUtil.LogLevel.DEBUG)
+		else:
+			GlobalUtil.log("创建卡牌失败：" + card_type, GlobalUtil.LogLevel.WARNING)
+	
+	GlobalUtil.log("完成创建所有prefab卡牌，总计：" + str(prefab_files.size()) + " 个", GlobalUtil.LogLevel.INFO)

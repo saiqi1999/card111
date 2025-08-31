@@ -3,6 +3,9 @@ extends Node2D
 # 卡牌工具组件
 # 用于显示卡牌的视觉表现和提供卡牌相关工具函数
 
+# 确保StackUtil可用（虽然它是autoload，但明确引用以避免IDE警告）
+# StackUtil已在project.godot中注册为autoload单例
+
 # 卡牌固定尺寸（使用全局常量）
 const CARD_WIDTH: float = GlobalConstants.CARD_WIDTH  # 卡牌宽度
 const CARD_HEIGHT: float = GlobalConstants.CARD_HEIGHT  # 卡牌高度
@@ -34,11 +37,8 @@ static var card_layer_counter: int = 0  # 全局层级计数器
 var card_layer: int = 0  # 当前卡牌的层级
 static var all_cards: Array[Node2D] = []  # 所有卡牌实例的引用
 
-# 卡牌堆叠系统
-static var card_stacks: Dictionary = {}  # 卡牌堆叠状态管理 {stack_id: [card1, card2, ...]}
-static var card_to_stack: Dictionary = {}  # 卡牌到堆叠的映射 {card_instance_id: stack_id}
-static var stack_id_counter: int = 0  # 堆叠ID计数器
-var stack_id: int = -1  # 当前卡牌所属的堆叠ID，-1表示不在任何堆叠中
+# 当前卡牌所属的堆叠ID，-1表示不在任何堆叠中
+var stack_id: int = -1
 
 
 
@@ -695,11 +695,11 @@ func check_and_stack_card():
 	var current_instance_id = get_instance_id()
 	
 	# 检查当前卡牌是否在堆叠中
-	if current_instance_id in card_to_stack:
-		original_stack_id = card_to_stack[current_instance_id]
-		# 检查是否是堆叠底部卡牌（索引为0）
-		if original_stack_id in card_stacks and card_stacks[original_stack_id].size() > 0:
-			was_bottom_card = (card_stacks[original_stack_id][0] == self)
+	if StackUtil.is_in_stack_by_id(current_instance_id):
+		original_stack_id = StackUtil.get_stack_id_by_card_id(current_instance_id)
+	
+	if StackUtil.stack_exists(original_stack_id) and StackUtil.get_stack_size(original_stack_id) > 0:
+		was_bottom_card = StackUtil.is_bottom_card(self, original_stack_id)
 	
 	if target_card != null and target_card != self:
 		GlobalUtil.log("找到可堆叠的目标卡牌: " + target_card.card_name, GlobalUtil.LogLevel.DEBUG)
@@ -708,8 +708,8 @@ func check_and_stack_card():
 		var target_instance_id = target_card.get_instance_id()
 		var is_returning_to_original = false
 		
-		if target_instance_id in card_to_stack:
-			var target_stack_id = card_to_stack[target_instance_id]
+		if StackUtil.is_in_stack_by_id(target_instance_id):
+			var target_stack_id = StackUtil.get_stack_id_by_card_id(target_instance_id)
 			is_returning_to_original = (target_stack_id == original_stack_id)
 		
 		# 如果不是回到原来的位置，且原来不是底部卡牌，说明拆分了堆叠，需要取消原堆叠的合成任务
@@ -717,6 +717,11 @@ func check_and_stack_card():
 			cancel_crafting_task_for_stack(original_stack_id)
 		
 		stack_card_group_on_target(target_card)
+		
+		# 堆叠状态变化完成后，检查原始堆叠是否能形成新的recipe
+		if not is_returning_to_original and not was_bottom_card and original_stack_id != -1:
+			if StackUtil.stack_exists(original_stack_id):
+				check_stack_for_crafting(original_stack_id)
 	else:
 		GlobalUtil.log("未找到可堆叠的目标卡牌", GlobalUtil.LogLevel.DEBUG)
 		
@@ -731,6 +736,11 @@ func check_and_stack_card():
 		else:
 			# 如果只是单张卡牌，移除原有堆叠关系
 			remove_from_current_stack()
+		
+		# 堆叠状态变化完成后，检查原始堆叠是否能形成新的recipe
+		if not was_bottom_card and original_stack_id != -1:
+			if StackUtil.stack_exists(original_stack_id):
+				check_stack_for_crafting(original_stack_id)
 	
 	# 清空连带拖拽卡牌列表
 	dragging_cards.clear()
@@ -770,8 +780,7 @@ func stack_card_on_target(target_card: Node2D):
 	var target_stack_id = get_or_create_stack_for_card(target_card)
 	
 	# 将当前卡牌添加到堆叠中
-	card_stacks[target_stack_id].append(self)
-	card_to_stack[current_instance_id] = target_stack_id
+	StackUtil.add_card_to_stack(self, target_stack_id)
 	stack_id = target_stack_id
 	
 	# 更新堆叠中所有卡牌的位置
@@ -787,19 +796,18 @@ func stack_card_group_on_target(target_card: Node2D):
 	# 记录原始堆叠ID，用于后续检查（所有卡牌来自同一个堆叠）
 	var original_stack_id = -1
 	var current_instance_id = get_instance_id()
-	if current_instance_id in card_to_stack:
-		original_stack_id = card_to_stack[current_instance_id]
+	if StackUtil.is_in_stack_by_id(current_instance_id):
+		original_stack_id = StackUtil.get_stack_id_by_card_id(current_instance_id)
 	
 	# 首先处理主卡牌
 	remove_from_current_stack()
 	
 	# 确保目标堆叠仍然存在（可能在remove_from_current_stack中被删除）
-	if not target_stack_id in card_stacks:
+	if not StackUtil.stack_exists(target_stack_id):
 		# 重新创建目标堆叠
 		target_stack_id = get_or_create_stack_for_card(target_card)
 	
-	card_stacks[target_stack_id].append(self)
-	card_to_stack[get_instance_id()] = target_stack_id
+	StackUtil.add_card_to_stack(self, target_stack_id)
 	stack_id = target_stack_id
 	
 	# 然后处理连带拖拽的卡牌
@@ -809,12 +817,11 @@ func stack_card_group_on_target(target_card: Node2D):
 			card.remove_from_current_stack()
 			
 			# 确保目标堆叠仍然存在
-			if not target_stack_id in card_stacks:
+			if not StackUtil.stack_exists(target_stack_id):
 				target_stack_id = get_or_create_stack_for_card(target_card)
 			
 			# 添加到目标堆叠
-			card_stacks[target_stack_id].append(card)
-			card_to_stack[card.get_instance_id()] = target_stack_id
+			StackUtil.add_card_to_stack(card, target_stack_id)
 			card.stack_id = target_stack_id
 	
 	# 更新堆叠中所有卡牌的位置
@@ -824,7 +831,7 @@ func stack_card_group_on_target(target_card: Node2D):
 	check_stack_for_crafting(target_stack_id)
 	
 	# 检查原始堆叠是否依然存在，如果存在也需要检查合成条件
-	if original_stack_id != -1 and original_stack_id in card_stacks and original_stack_id != target_stack_id:
+	if original_stack_id != -1 and StackUtil.stack_exists(original_stack_id) and original_stack_id != target_stack_id:
 		check_stack_for_crafting(original_stack_id)
 		GlobalUtil.log("检查原始堆叠ID " + str(original_stack_id) + " 的合成条件", GlobalUtil.LogLevel.DEBUG)
 	
@@ -836,13 +843,7 @@ func create_new_stack_with_cards():
 	remove_from_current_stack()
 	
 	# 创建新堆叠
-	var new_stack_id = stack_id_counter
-	stack_id_counter += 1
-	
-	# 初始化堆叠，主卡牌作为底牌
-	card_stacks[new_stack_id] = [self]
-	card_to_stack[get_instance_id()] = new_stack_id
-	stack_id = new_stack_id
+	var new_stack_id = StackUtil.create_new_stack_with_card(self)
 	
 	# 添加连带拖拽的卡牌
 	for card in dragging_cards:
@@ -850,8 +851,7 @@ func create_new_stack_with_cards():
 			# 移除连带卡牌的旧堆叠关系
 			card.remove_from_current_stack()
 			# 添加到新堆叠
-			card_stacks[new_stack_id].append(card)
-			card_to_stack[card.get_instance_id()] = new_stack_id
+			StackUtil.add_card_to_stack(card, new_stack_id)
 			card.stack_id = new_stack_id
 	
 	# 更新堆叠中所有卡牌的位置
@@ -864,284 +864,44 @@ func create_new_stack_with_cards():
 
 # 获取或创建卡牌的堆叠ID
 static func get_or_create_stack_for_card(card: Node2D) -> int:
-	var card_instance_id = card.get_instance_id()
-	
-	# 如果卡牌已经在堆叠中，返回其堆叠ID
-	if card_instance_id in card_to_stack:
-		return card_to_stack[card_instance_id]
-	
-	# 创建新的堆叠
-	var new_stack_id = stack_id_counter
-	stack_id_counter += 1
-	
-	# 初始化堆叠
-	card_stacks[new_stack_id] = [card]
-	card_to_stack[card_instance_id] = new_stack_id
-	card.stack_id = new_stack_id
-	
-	GlobalUtil.log("为卡牌 " + card.card_name + " 创建新堆叠，ID: " + str(new_stack_id), GlobalUtil.LogLevel.DEBUG)
-	return new_stack_id
+	return StackUtil.get_or_create_stack_for_card(card)
 
 # 从当前堆叠中移除卡牌
 func remove_from_current_stack():
-	var current_instance_id = get_instance_id()
-	
-	# 如果不在任何堆叠中，直接返回
-	if not current_instance_id in card_to_stack:
-		return
-	
-	var old_stack_id = card_to_stack[current_instance_id]
-	
-	# 从堆叠中移除当前卡牌
-	if old_stack_id in card_stacks:
-		card_stacks[old_stack_id].erase(self)
-		
-		# 检查堆叠剩余卡牌数量
-		var remaining_cards = card_stacks[old_stack_id]
-		if remaining_cards.size() == 0:
-			# 堆叠为空，删除堆叠
-			card_stacks.erase(old_stack_id)
-			GlobalUtil.log("删除空堆叠，ID: " + str(old_stack_id), GlobalUtil.LogLevel.DEBUG)
-		elif remaining_cards.size() == 1:
-			# 只剩一张卡牌，清除整个堆叠
-			var last_card = remaining_cards[0]
-			if last_card != null and is_instance_valid(last_card):
-				# 移除最后一张卡牌的堆叠映射
-				var last_card_id = last_card.get_instance_id()
-				card_to_stack.erase(last_card_id)
-				last_card.stack_id = -1
-				GlobalUtil.log("卡牌 " + last_card.card_name + " 不再属于任何堆叠", GlobalUtil.LogLevel.DEBUG)
-			
-			# 删除堆叠
-			card_stacks.erase(old_stack_id)
-			GlobalUtil.log("堆叠只剩一张卡牌，清除堆叠，ID: " + str(old_stack_id), GlobalUtil.LogLevel.DEBUG)
-		else:
-			# 多张卡牌，更新剩余卡牌的位置
-			update_stack_positions(old_stack_id)
-	
-	# 移除当前卡牌的映射关系
-	card_to_stack.erase(current_instance_id)
-	stack_id = -1
-	
-	GlobalUtil.log("卡牌 " + card_name + " 已从堆叠 " + str(old_stack_id) + " 中移除", GlobalUtil.LogLevel.DEBUG)
+	StackUtil.remove_from_current_stack(self)
 
 # 更新堆叠中所有卡牌的位置
 static func update_stack_positions(stack_id: int):
-	if not stack_id in card_stacks:
-		return
-	
-	var stack = card_stacks[stack_id]
-	if stack.size() == 0:
-		return
-	
-	# 底部卡牌保持原位置
-	var base_card = stack[0]
-	var base_position = base_card.global_position
-	
-	# 更新堆叠中每张卡牌的位置和层级
-	for i in range(stack.size()):
-		var card = stack[i]
-		if card == null or not is_instance_valid(card):
-			continue
-		
-		# 计算位置偏移
-		var offset_y = i * GlobalConstants.CARD_STACK_OFFSET
-		card.global_position = base_position + Vector2(0, offset_y)
-		
-		# 更新层级，确保上层卡牌在前面
-		card.bring_to_front()
-		
-		GlobalUtil.log("更新堆叠卡牌位置: " + card.card_name + " 位置: " + str(card.global_position), GlobalUtil.LogLevel.DEBUG)
-	
-	# 通过RecipeUtil更新进度条位置
-	RecipeUtil.update_progress_bar_position_for_stack(stack_id)
+	StackUtil.update_stack_positions(stack_id)
 
 # 获取堆叠系统调试信息
 static func get_stack_debug_info() -> String:
-	var info = "=== 卡牌堆叠状态 ===\n"
-	info += "堆叠总数: " + str(card_stacks.size()) + "\n"
-	info += "卡牌映射数: " + str(card_to_stack.size()) + "\n"
-	
-	for stack_id in card_stacks.keys():
-		var stack = card_stacks[stack_id]
-		info += "堆叠 " + str(stack_id) + ": " + str(stack.size()) + " 张卡牌\n"
-		for i in range(stack.size()):
-			var card = stack[i]
-			if card != null and is_instance_valid(card):
-				info += "  [" + str(i) + "] " + card.card_name + "\n"
-	
-	info += "==================\n"
-	return info
+	return StackUtil.get_stack_debug_info()
 
 # 清理无效的堆叠引用
 static func cleanup_invalid_stacks():
-	var stacks_to_remove: Array[int] = []
-	var mappings_to_remove: Array[Node2D] = []
-	
-	# 检查堆叠中的无效卡牌
-	for stack_id in card_stacks.keys():
-		var stack = card_stacks[stack_id]
-		var valid_cards: Array[Node2D] = []
-		
-		for card in stack:
-			if card != null and is_instance_valid(card):
-				valid_cards.append(card)
-		
-		# 更新堆叠或标记删除
-		if valid_cards.size() == 0:
-			stacks_to_remove.append(stack_id)
-		else:
-			card_stacks[stack_id] = valid_cards
-	
-	# 检查映射中的无效卡牌
-	for instance_id in card_to_stack.keys():
-		var found = false
-		for card in all_cards:
-			if card != null and is_instance_valid(card) and card.get_instance_id() == instance_id:
-				found = true
-				break
-		
-		if not found:
-			mappings_to_remove.append(instance_id)
-	
-	# 移除无效的堆叠和映射
-	for stack_id in stacks_to_remove:
-		card_stacks.erase(stack_id)
-	
-	for instance_id in mappings_to_remove:
-		card_to_stack.erase(instance_id)
-	
-	GlobalUtil.log("清理堆叠系统: 移除 " + str(stacks_to_remove.size()) + " 个无效堆叠, " + str(mappings_to_remove.size()) + " 个无效映射", GlobalUtil.LogLevel.DEBUG)
+	StackUtil.cleanup_invalid_stacks()
 
 # 获取当前卡牌上方的所有卡牌（用于连带拖拽）
 func get_cards_above() -> Array[Node2D]:
-	var cards_above: Array[Node2D] = []
-	var current_instance_id = get_instance_id()
-	
-	# 如果当前卡牌不在任何堆叠中，返回空数组
-	if not current_instance_id in card_to_stack:
-		return cards_above
-	
-	var current_stack_id = card_to_stack[current_instance_id]
-	
-	# 如果堆叠不存在，返回空数组
-	if not current_stack_id in card_stacks:
-		return cards_above
-	
-	var stack = card_stacks[current_stack_id]
-	var current_index = -1
-	
-	# 找到当前卡牌在堆叠中的位置
-	for i in range(stack.size()):
-		if stack[i] == self:
-			current_index = i
-			break
-	
-	# 如果找到了当前卡牌的位置，获取其上方的所有卡牌
-	if current_index >= 0:
-		for i in range(current_index + 1, stack.size()):
-			if stack[i] != null and is_instance_valid(stack[i]):
-				cards_above.append(stack[i])
-	
-	GlobalUtil.log("获取到 " + str(cards_above.size()) + " 张上方卡牌", GlobalUtil.LogLevel.DEBUG)
-	return cards_above
+	return StackUtil.get_cards_above(self)
 
 # 检查当前卡牌是否在堆叠中
 func is_in_stack() -> bool:
-	var current_instance_id = get_instance_id()
-	return current_instance_id in card_to_stack
+	return StackUtil.is_in_stack(self)
 
 # 获取当前卡牌所在堆叠的统计信息
 func get_stack_info() -> Dictionary:
-	var stack_info = {}
-	var current_instance_id = get_instance_id()
-	
-	# 如果不在堆叠中，返回空字典
-	if not current_instance_id in card_to_stack:
-		return stack_info
-	
-	var current_stack_id = card_to_stack[current_instance_id]
-	
-	# 如果堆叠不存在，返回空字典
-	if not current_stack_id in card_stacks:
-		return stack_info
-	
-	var stack = card_stacks[current_stack_id]
-	var card_counts = {}  # 存储每种卡牌的数量
-	var total_cards = 0
-	
-	# 统计堆叠中每种卡牌的数量
-	for card in stack:
-		if card != null and is_instance_valid(card):
-			total_cards += 1
-			var card_name = card.card_name if card.card_name else "未知卡牌"
-			
-			if card_name in card_counts:
-				card_counts[card_name] += 1
-			else:
-				card_counts[card_name] = 1
-	
-	# 构建返回信息
-	stack_info["total_cards"] = total_cards
-	stack_info["card_counts"] = card_counts
-	stack_info["stack_id"] = current_stack_id
-	
-	GlobalUtil.log("获取堆叠信息: 总计 " + str(total_cards) + " 张卡牌，" + str(card_counts.size()) + " 种类型", GlobalUtil.LogLevel.DEBUG)
-	return stack_info
+	return StackUtil.get_stack_info(self)
 
 # 格式化堆叠信息为显示文本
 func format_stack_info_for_display() -> Dictionary:
-	var stack_info = get_stack_info()
-	
-	if stack_info.is_empty():
-		return {"title": card_name, "description": description}
-	
-	var card_counts = stack_info["card_counts"]
-	var total_cards = stack_info["total_cards"]
-	
-	# 构建标题
-	var title = "卡牌堆叠 (" + str(total_cards) + "张)"
-	
-	# 构建描述
-	var description_lines = []
-	for cardname in card_counts.keys():
-		var count = card_counts[cardname]
-		description_lines.append(cardname + " x" + str(count))
-	
-	var formatted_description = "\n".join(description_lines)
-	
-	return {"title": title, "description": formatted_description}
+	return StackUtil.format_stack_info_for_display(self)
 
 # 检查堆叠是否匹配配方并开始合成
 func check_stack_for_crafting(stack_id: int):
-	# 检查堆叠是否存在
-	if not stack_id in card_stacks:
-		GlobalUtil.log("堆叠ID " + str(stack_id) + " 不存在，无法检查配方", GlobalUtil.LogLevel.WARNING)
-		return
-	
-	var stack_cards = card_stacks[stack_id]
-	
-	# 检查堆叠中是否有足够的卡牌
-	if stack_cards.size() < 2:
-		GlobalUtil.log("堆叠卡牌数量不足，无法进行合成检查", GlobalUtil.LogLevel.DEBUG)
-		return
-	
-	# 调用RecipeUtil检查配方并开始合成
-	var success = RecipeUtil.start_crafting(stack_cards, str(stack_id))
-	if success:
-		GlobalUtil.log("堆叠ID " + str(stack_id) + " 开始合成", GlobalUtil.LogLevel.INFO)
-		# 通过RecipeUtil显示进度条
-		RecipeUtil.show_progress_bar_for_stack(stack_id)
-	else:
-		GlobalUtil.log("堆叠ID " + str(stack_id) + " 未匹配任何配方", GlobalUtil.LogLevel.DEBUG)
+	StackUtil.check_stack_for_crafting(stack_id)
 
 # 取消指定堆叠的合成任务
 func cancel_crafting_task_for_stack(stack_id: int):
-	# 调用RecipeUtil取消合成任务和隐藏进度条
-	var success = RecipeUtil.cancel_crafting(str(stack_id))
-	if success:
-		GlobalUtil.log("已取消堆叠ID " + str(stack_id) + " 的合成任务", GlobalUtil.LogLevel.INFO)
-		# 通过RecipeUtil隐藏进度条
-		RecipeUtil.hide_progress_bar_for_stack(stack_id)
-	else:
-		GlobalUtil.log("堆叠ID " + str(stack_id) + " 没有正在进行的合成任务", GlobalUtil.LogLevel.DEBUG)
+	StackUtil.cancel_crafting_task_for_stack(stack_id)

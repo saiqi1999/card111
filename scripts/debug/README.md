@@ -65,6 +65,7 @@ func create_card(position: Vector2):
 - `random` - 创建一张打击卡牌并将其随机移动到非中心区域（避开中心区域）
 - `random2` - 创建一张随机类型的卡牌（打击或防御）并将其随机移动到非中心区域
 - `overlap` - 创建5张重叠的卡牌，用于测试层级管理功能
+- `listall` - 扫描prefabs目录下所有卡牌预制件并生成实例，按每行17个卡牌的网格布局排列
 - `log on` - 开启日志输出
 - `log off` - 关闭日志输出
 - `help` - 显示所有可用命令和当前日志状态
@@ -200,6 +201,7 @@ func show_help():
     GlobalUtil.log("random - 创建随机移动的打击卡牌", GlobalUtil.LogLevel.INFO)
     GlobalUtil.log("random2 - 创建随机移动的打击或防御卡牌", GlobalUtil.LogLevel.INFO)
     GlobalUtil.log("overlap - 创建5张重叠卡牌测试层级管理", GlobalUtil.LogLevel.INFO)
+    GlobalUtil.log("listall - 生成所有卡牌预制件的网格布局", GlobalUtil.LogLevel.INFO)
     GlobalUtil.log("log on/off - 开启/关闭日志输出", GlobalUtil.LogLevel.INFO)
     GlobalUtil.log("help - 显示此帮助信息", GlobalUtil.LogLevel.INFO)
     var log_status = "开启" if GlobalUtil.is_log_enabled() else "关闭"
@@ -210,6 +212,74 @@ func show_help():
     if util_node and util_node.has_method("_ready"):
         util_node._ready()
         print("全局工具已重新初始化")
+```
+
+**全卡牌预制件展示功能**：
+```gdscript
+func create_all_prefab_cards():
+    # 扫描prefabs目录下的所有.gd文件并生成卡牌实例
+    GlobalUtil.log("开始扫描prefabs目录...", GlobalUtil.LogLevel.INFO)
+    
+    # 确保卡牌池已初始化
+    CardUtil.initialize_card_pool(root_node)
+    
+    var prefabs_dir = "res://scripts/cards/prefabs/"
+    var dir = DirAccess.open(prefabs_dir)
+    
+    if dir == null:
+        GlobalUtil.log("无法打开prefabs目录: " + prefabs_dir, GlobalUtil.LogLevel.ERROR)
+        return
+    
+    # 获取所有.gd文件
+    var gd_files = []
+    dir.list_dir_begin()
+    var current_file = dir.get_next()
+    
+    while current_file != "":
+        if current_file.ends_with(".gd") and not current_file.ends_with(".uid"):
+            gd_files.append(current_file)
+        current_file = dir.get_next()
+    
+    dir.list_dir_end()
+    
+    # 按文件名排序
+    gd_files.sort()
+    
+    GlobalUtil.log("找到 " + str(gd_files.size()) + " 个卡牌预制件文件", GlobalUtil.LogLevel.INFO)
+    
+    # 计算网格布局参数
+    var cards_per_row = 17
+    var card_width = GlobalConstants.CARD_WIDTH
+    var card_height = GlobalConstants.CARD_HEIGHT
+    var spacing_x = card_width + 10  # 卡牌间距
+    var spacing_y = card_height + 10
+    
+    # 计算起始位置（居中显示）
+    var total_width = cards_per_row * spacing_x - 10
+    var start_x = (GlobalConstants.SCREEN_WIDTH - total_width) / 2
+    var start_y = 100  # 从屏幕顶部开始
+    
+    # 生成卡牌实例
+    for i in range(gd_files.size()):
+        var file_name = gd_files[i]
+        var card_type = file_name.replace("_card_pack.gd", "")
+        
+        # 计算卡牌位置
+        var row = i / cards_per_row
+        var col = i % cards_per_row
+        var position = Vector2(
+            start_x + col * spacing_x,
+            start_y + row * spacing_y
+        )
+        
+        # 创建卡牌实例
+        var card_instance = CardUtil.create_card_from_pool(root_node, card_type, position)
+        if card_instance:
+            GlobalUtil.log("创建卡牌: " + card_type + " 位置: " + str(position), GlobalUtil.LogLevel.DEBUG)
+        else:
+            GlobalUtil.log("创建卡牌失败: " + card_type, GlobalUtil.LogLevel.WARNING)
+    
+    GlobalUtil.log("所有卡牌预制件已生成完成，共 " + str(gd_files.size()) + " 张卡牌", GlobalUtil.LogLevel.INFO)
 ```
 
 #### 滑动卡牌功能

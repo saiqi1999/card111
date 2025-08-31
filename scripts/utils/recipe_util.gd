@@ -2,6 +2,9 @@
 # 用于管理卡牌之间的合成配方
 extends Node
 
+# 确保StackUtil可用（虽然它是autoload，但明确引用以避免IDE警告）
+# StackUtil已在project.godot中注册为autoload单例
+
 # 进度更新定时器
 var progress_update_timer: Timer
 
@@ -240,12 +243,12 @@ func _check_stack_for_continued_crafting(stack_id: String):
 	var CardUtil = preload("res://scripts/cards/card_util.gd")
 	
 	# 检查堆叠是否仍然存在
-	if not CardUtil.card_stacks.has(int(stack_id)):
+	if not StackUtil.stack_exists(int(stack_id)):
 		GlobalUtil.log("堆叠 " + stack_id + " 不存在，无法继续合成检查", GlobalUtil.LogLevel.DEBUG)
 		return
 	
 	# 获取堆叠中的卡牌
-	var stack_cards = CardUtil.card_stacks[int(stack_id)]
+	var stack_cards = StackUtil.get_stack_cards(int(stack_id))
 	if stack_cards.size() < 2:
 		GlobalUtil.log("堆叠 " + stack_id + " 卡牌数量不足，无法继续合成", GlobalUtil.LogLevel.DEBUG)
 		return
@@ -287,9 +290,8 @@ func _update_crafting_progress():
 
 # 为堆叠创建并显示进度条
 func show_progress_bar_for_stack(stack_id: int):
-	# 获取CardUtil来检查堆叠是否存在
-	var CardUtil = preload("res://scripts/cards/card_util.gd")
-	if not CardUtil.card_stacks.has(stack_id):
+	# 检查堆叠是否存在
+	if not StackUtil.stack_exists(stack_id):
 		GlobalUtil.log("堆叠ID " + str(stack_id) + " 不存在，无法显示进度条", GlobalUtil.LogLevel.WARNING)
 		return
 	
@@ -303,7 +305,7 @@ func show_progress_bar_for_stack(stack_id: int):
 	progress_bar.set_script(progress_bar_script)
 	
 	# 获取堆叠信息
-	var stack_cards = CardUtil.card_stacks[stack_id]
+	var stack_cards = StackUtil.get_stack_cards(stack_id)
 	if stack_cards.size() == 0:
 		return
 	
@@ -344,12 +346,11 @@ func hide_progress_bar_for_stack(stack_id: int):
 
 # 更新堆叠位置时同步更新进度条位置
 func update_progress_bar_position_for_stack(stack_id: int):
-	var CardUtil = preload("res://scripts/cards/card_util.gd")
-	if not stack_id in stack_progress_bars or not CardUtil.card_stacks.has(stack_id):
+	if not stack_id in stack_progress_bars or not StackUtil.stack_exists(stack_id):
 		return
 	
 	var progress_bar = stack_progress_bars[stack_id]
-	var stack_cards = CardUtil.card_stacks[stack_id]
+	var stack_cards = StackUtil.get_stack_cards(stack_id)
 	
 	if progress_bar != null and is_instance_valid(progress_bar) and stack_cards.size() > 0:
 		var bottom_card = stack_cards[0]
