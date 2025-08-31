@@ -84,6 +84,13 @@ const CAMERA_MOVE_BOUNDS_MIN: Vector2 = Vector2(1700, 1000)  # 相机移动范�
 const CAMERA_MOVE_BOUNDS_SIZE: Vector2 = Vector2(400, 400)  # 相机移动范围尺寸
 const CARD_MOVE_BOUNDS_MIN: Vector2 = Vector2(1000, 700)  # 卡牌移动范围最小值
 const CARD_MOVE_BOUNDS_SIZE: Vector2 = Vector2(1400, 1000)  # 卡牌移动范围尺寸
+const FOG_GRID_MIN: Vector2 = Vector2(CARD_MOVE_BOUNDS_MIN.x - CARD_WIDTH / 2, CARD_MOVE_BOUNDS_MIN.y - CARD_HEIGHT / 2)  # 迷雾网格起始位置（卡牌移动范围最小值 + 半个卡牌宽度和高度）
+const FOG_GRID_SIZE: Vector2 = Vector2(CARD_MOVE_BOUNDS_SIZE.x + CARD_WIDTH, CARD_MOVE_BOUNDS_SIZE.y + CARD_HEIGHT)  # 迷雾网格尺寸（卡牌移动范围尺寸 + 一个卡牌宽度和高度）
+const FOG_LAYER_COLOR: Color = Color(0, 0, 0, 1)  # 迷雾遮罩层颜色（黑色）
+
+# 根据网格坐标计算迷雾层的位置
+static func get_fog_grid_position(grid_x: int, grid_y: int) -> Vector2:
+	return FOG_GRID_MIN + Vector2(grid_x * FOG_GRID_SIZE.x, grid_y * FOG_GRID_SIZE.y)
 
 # 获取所有常量的字典表示（用于调试）
 static func get_all_constants() -> Dictionary:
@@ -127,7 +134,18 @@ static func get_all_constants() -> Dictionary:
 		"UI_NORMAL_FONT_SIZE": UI_NORMAL_FONT_SIZE,
 		"CTRL_Z_INDEX": CTRL_Z_INDEX,
 		"CTRL_UI_Z_INDEX": CTRL_UI_Z_INDEX,
-		"CTRL_TITLE_Z_INDEX": CTRL_TITLE_Z_INDEX
+		"CTRL_TITLE_Z_INDEX": CTRL_TITLE_Z_INDEX,
+		"CAMERA_ZOOM_MIN": CAMERA_ZOOM_MIN,
+		"CAMERA_ZOOM_MAX": CAMERA_ZOOM_MAX,
+		"CAMERA_ZOOM_SPEED": CAMERA_ZOOM_SPEED,
+		"CAMERA_DRAG_SPEED": CAMERA_DRAG_SPEED,
+		"CAMERA_MOVE_BOUNDS_MIN": CAMERA_MOVE_BOUNDS_MIN,
+		"CAMERA_MOVE_BOUNDS_SIZE": CAMERA_MOVE_BOUNDS_SIZE,
+		"CARD_MOVE_BOUNDS_MIN": CARD_MOVE_BOUNDS_MIN,
+		"CARD_MOVE_BOUNDS_SIZE": CARD_MOVE_BOUNDS_SIZE,
+		"FOG_GRID_MIN": FOG_GRID_MIN,
+		"FOG_GRID_SIZE": FOG_GRID_SIZE,
+		"FOG_LAYER_COLOR": FOG_LAYER_COLOR
 	}
 
 # 打印所有常量（用于调试）

@@ -1,7 +1,7 @@
 extends Node
 
 # 区域管理工具类
-# 用于管理相机和卡牌的移动范围
+# 用于管理相机和卡牌的移动范围，以及遮罩层
 
 # 默认移动范围（使用全局常量）
 static var camera_move_bounds: Rect2 = Rect2(
@@ -14,8 +14,53 @@ static var card_move_bounds: Rect2 = Rect2(
 	GlobalConstants.CARD_MOVE_BOUNDS_SIZE
 )
 
+# 遮罩层字典，使用二维坐标作为键
+var fog_layers: Dictionary = {}
+
 func _ready():
+	# 初始化遮罩层
+	_init_fog_layers()
 	GlobalUtil.log("区域管理工具初始化完成", GlobalUtil.LogLevel.DEBUG)
+
+# 初始化遮罩层
+func _init_fog_layers():
+	# 创建 5x5 的遮罩层网格，范围从 (-2,-2) 到 (2,2)
+	for grid_y in range(-2, 3):  # -2 到 2
+		for grid_x in range(-2, 3):  # -2 到 2
+			var layer = _create_fog_layer(grid_x, grid_y)
+			# 设置初始可见性：只有 (0,0) 位置不可见，其他位置都可见
+			layer.visible = !(grid_x == 0 && grid_y == 0)
+	
+	GlobalUtil.log("5x5遮罩层网格初始化完成", GlobalUtil.LogLevel.DEBUG)
+
+# 创建单个遮罩层
+func _create_fog_layer(grid_x: int, grid_y: int) -> ColorRect:
+	var layer = ColorRect.new()
+	layer.color = GlobalConstants.FOG_LAYER_COLOR
+	layer.size = GlobalConstants.FOG_GRID_SIZE
+	layer.position = GlobalConstants.get_fog_grid_position(grid_x, grid_y)
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE  # 忽略鼠标事件
+	add_child(layer)
+	
+	# 将遮罩层添加到字典中
+	var grid_key = Vector2i(grid_x, grid_y)
+	fog_layers[grid_key] = layer
+	
+	return layer
+
+# 设置指定坐标遮罩层的可见性
+func set_fog_visible(grid_x: int, grid_y: int, visible: bool):
+	var grid_key = Vector2i(grid_x, grid_y)
+	if fog_layers.has(grid_key):
+		fog_layers[grid_key].visible = visible
+		GlobalUtil.log("设置遮罩层(%d,%d)可见性: %s" % [grid_x, grid_y, visible], GlobalUtil.LogLevel.DEBUG)
+
+# 获取指定坐标的遮罩层
+func get_fog_layer(grid_x: int, grid_y: int) -> ColorRect:
+	var grid_key = Vector2i(grid_x, grid_y)
+	if fog_layers.has(grid_key):
+		return fog_layers[grid_key]
+	return null
 
 # 设置相机移动范围
 static func set_camera_bounds(bounds: Rect2):
