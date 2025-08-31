@@ -1,95 +1,120 @@
 # 控制器系统
 
-控制器系统用于在游戏中显示和管理各种UI界面，如背包、商店界面等。采用Control+简化位置设置的UI实现方式，并使用Godot的Autoload机制实现单例模式。
+简化的控制器系统，遵循Godot最佳实践，只保留必要的功能。<mcreference link="https://docs.godotengine.org/en/3.2/getting_started/step_by_step/singletons_autoload.html" index="1">1</mcreference>
 
 ## 文件结构
 
-- `ctrl_base.gd` - 控制器抽象基类，继承自Control，定义控制器的基本属性和UI布局
-- `ctrl_util.gd` - 控制器工具类，负责控制器的实例化、显示和管理
-- `prefabs/` - 控制器预制件文件夹
-  - `ctrl_400_300.gd` - 400x300尺寸的小控制器包
+- `camera_ctrl.gd` - 相机控制器，提供可拖拽和缩放的2D相机功能
+- `prefabs/` - UI组件文件夹
+  - `ctrl_400_300.gd` - 简化的信息面板，使用Autoload单例模式
 - `README.md` - 本说明文件
 
-## 控制器抽象基类 (CtrlBase)
+## 信息面板 (Ctrl400x300)
 
-`ctrl_base.gd` 继承自 `Control`，定义了控制器的基本属性和UI布局。
-
-#### 基类属性
-
-- `ctrl_name`: 控制器名称
-- `description`: 控制器描述
-- `background_panel`: 背景面板引用
-- `title_label`: 标题标签引用
-- `description_label`: 描述标签引用
-- `on_click`: 容器点击回调函数
-
-#### 基类方法
-
-- `_init(p_name, p_description)`: 初始化控制器基本信息
-- `_ready()`: 初始化UI元素和布局
-- `setup_ctrl_ui()`: 创建UI元素（背景面板、标题标签、描述标签）
-- `setup_ctrl_layout()`: 设置控制器布局（左下角，占据三分之一屏幕，留100px边距）
-- `set_ctrl_data()`: 设置控制器数据
-- `get_ctrl_size()`: 获取控制器尺寸
-
-## 控制器工具类 (CtrlUtil)
-
-`ctrl_util.gd` 继承自 `Control`，负责控制器的管理和交互逻辑。
-
-#### 工具类功能
-
-1. **静态容器管理**
-   - `current_ctrl`: 静态变量，跟踪当前显示的控制器实例
-- `remove_current_ctrl()`: 移除当前控制器的静态方法
-- `has_ctrl()`: 检查是否存在控制器的静态方法
-- `get_current_ctrl()`: 获取当前控制器实例的静态方法
-
-2. **容器实例管理**
-   - `ctrl_instance`: 当前控制器实例引用
-   - `load_from_ctrl_pack()`: 从控制器包加载数据
-   - `load_from_ctrl_type()`: 通过类型字符串加载控制器
-   - `set_ctrl_title_and_description()`: 设置控制器标题和描述
-
-3. **控制器类型支持**
-   - `get_ctrl_pack_by_type()`: 通过类型获取控制器包实例
-   - 目前支持 "400x300" 小控制器类型
-
-## 小控制器 (Ctrl400x300)
-
-`prefabs/ctrl_400_300.gd` 继承自 `CtrlBase`，提供400x300尺寸的小控制器预制件。现已配置为Autoload单例，可通过`Ctrl400x300`全局访问。
+`prefabs/ctrl_400_300.gd` 是一个简化的信息显示面板，使用Autoload单例模式。<mcreference link="https://www.reddit.com/r/godot/comments/zrxhor/what_are_appropriate_singletons/" index="2">2</mcreference>
 
 #### 主要功能
 
-- **标准尺寸**: 400x300像素的显示区域
-- **左下角布局**: 自动定位到屏幕左下角
-- **响应式设计**: 占据屏幕三分之一的长宽，留有100px边距
-- **动态标题描述**: 支持动态设置标题和描述文本
+- **Autoload单例**: 全局可访问，无需实例化
+- **简单显示**: 提供基本的标题和描述显示
+- **固定位置**: 锚定在屏幕左下角
+- **响应式**: 自动适应窗口大小变化
 
-#### Autoload单例实现
+#### 使用示例
 
 ```gdscript
-extends "res://scripts/ctrl/ctrl_base.gd"
+# 显示信息面板
+Ctrl400x300.show_ctrl()
 
-# 400x300小控制器包（Autoload单例）
-# 继承自CtrlBase，提供小控制器的特定功能
-# 使用Godot的Autoload系统实现单例模式
+# 设置显示内容
+Ctrl400x300.set_ctrl_title_and_description("标题", "描述信息")
 
-# 是否已经初始化
-var is_initialized: bool = false
+# 隐藏信息面板
+Ctrl400x300.hide_ctrl()
+```
 
-# 显示控制器
-func show_ctrl():
-	visible = true
-	GlobalUtil.log("显示ctrl_400_300控制器", GlobalUtil.LogLevel.DEBUG)
+## 相机控制器 (CameraCtrl)
 
-# 隐藏控制器
-func hide_ctrl():
-	visible = false
-	GlobalUtil.log("隐藏ctrl_400_300控制器", GlobalUtil.LogLevel.DEBUG)
+`camera_ctrl.gd` 继承自 `Camera2D`，提供可拖拽和缩放的2D相机功能，服务于root节点进行观察。
 
-# 设置控制器标题和描述（兼容card_util.gd的调用）
-func set_ctrl_title_and_description(title: String, desc: String):
-	set_title_and_description(title, desc)
+#### 主要功能
+
+- **鼠标左键拖拽**: 按住鼠标左键可拖拽移动相机视野
+- **智能卡牌检测**: 当鼠标位置有卡牌时，自动避免相机拖拽，优先处理卡牌操作
+- **滚轮缩放**: 使用鼠标滚轮进行相机缩放（放大/缩小）
+- **缩放限制**: 限制相机缩放范围在0.5x到3.0x之间
+- **平滑操作**: 提供流畅的拖拽和缩放体验
+- **位置管理**: 自动管理相机位置和状态
+
+#### 核心属性
+
+- `is_dragging`: 是否正在拖拽状态
+- `drag_start_position`: 拖拽开始时的鼠标位置
+- `camera_start_position`: 拖拽开始时的相机位置
+- `current_zoom`: 当前缩放级别
+
+#### 主要方法
+
+- `start_dragging(mouse_pos)`: 开始拖拽操作
+- `stop_dragging()`: 停止拖拽操作
+- `update_camera_position(current_mouse_pos)`: 更新相机位置（拖拽时）
+- `is_mouse_over_card()`: 检查鼠标位置是否有卡牌
+- `zoom_in()`: 相机放大
+- `zoom_out()`: 相机缩小
+- `reset_camera()`: 重置相机位置和缩放
+- `set_camera_position(new_position)`: 设置相机位置
+- `set_camera_zoom(new_zoom)`: 设置相机缩放
+- `get_camera_zoom()`: 获取当前缩放值
+- `get_camera_info()`: 获取相机信息（用于调试）
+
+#### 操作方式
+
+```gdscript
+# 鼠标右键拖拽移动视野
+# 在_input事件中处理
+if event.button_index == MOUSE_BUTTON_RIGHT:
+	if event.pressed:
+		start_dragging(event.position)  # 开始拖拽
+	else:
+		stop_dragging()  # 结束拖拽
+
+# 滚轮缩放
+elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
+	zoom_in()  # 放大
+elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+	zoom_out()  # 缩小
+```
+
+#### 相机特性
+
+- **自动激活**: 初始化时自动设置为当前活动相机
+- **智能拖拽**: 拖拽速度根据当前缩放级别自动调整
+- **边界安全**: 缩放操作有最小值和最大值限制
+- **调试支持**: 提供详细的日志输出和状态信息
+- **响应式**: 根据缩放级别调整拖拽灵敏度
+
+#### 使用示例
+
+```gdscript
+# 获取相机实例（在root.tscn场景中）
+var camera = $Camera2D as CameraCtrl
+
+# 重置相机
+camera.reset_camera()
+
+# 设置特定位置
+camera.set_camera_position(Vector2(100, 100))
+
+# 设置特定缩放
+camera.set_camera_zoom(1.5)
+
+# 获取当前缩放
+var current_zoom = camera.get_camera_zoom()
+
+# 获取相机调试信息
+var info = camera.get_camera_info()
+print("相机位置: ", info.position)
+print("相机缩放: ", info.zoom)
 ```
 
 ## 容器系统架构
@@ -108,39 +133,49 @@ func set_ctrl_title_and_description(title: String, desc: String):
 
 控制器使用以下布局规则：
 - **位置**: 左下角，距离边缘100像素
-- **尺寸**: 占据屏幕四分之一的长宽
+- **尺寸**: 固定400x300像素
 - **定位方式**: 使用简单的position设置，避免复杂的锚点问题
-- **响应式**: 根据屏幕分辨率动态计算尺寸和位置
+- **固定尺寸**: 使用400x300像素固定尺寸
 
 ### 如何创建新的容器类型
 
 1. **创建新的容器子类**：
 ```gdscript
 # 例如：ctrl_custom.gd
-extends CtrlBase
+extends Control
 class_name CtrlCustom
 
+# 控制器基本属性
+var ctrl_name: String = "自定义容器"
+var description: String = "自定义容器描述"
+var ctrl_texture: Texture2D = null
+var on_click: Callable = Callable()
+
+# UI元素引用
+var background_panel: Panel
+var title_label: Label
+var description_label: Label
+
 func _init():
-	super._init("自定义容器", "自定义容器描述")
+	ctrl_name = "自定义容器"
+	description = "自定义容器描述"
 	on_click = custom_click_effect
 
 func custom_click_effect(ctrl_instance):
 	# 定义自定义点击行为
 	pass
+
+# 需要实现的核心方法
+func setup_ctrl_ui():
+	# 创建UI元素的逻辑
+	pass
+
+func setup_ctrl_layout():
+	# 设置布局的逻辑
+	pass
 ```
 
-2. **在CtrlUtil中注册新类型**：
-```gdscript
-static func get_ctrl_pack_by_type(type: String) -> CtrlBase:
-	match type:
-		"400x300":
-			return Ctrl400x300Pack.new()
-		"custom":
-		return CtrlCustom.new()
-		_:
-			GlobalUtil.log("未知的容器类型: " + type, GlobalUtil.LogLevel.ERROR)
-			return null
-```
+
 
 ## 使用方法
 
@@ -185,68 +220,35 @@ Ctrl400x300.set_ctrl_title_and_description("标题", "描述")  # 设置内容
 ```
 
 ### 容器特性
-- 自动布局到左下角
-- 响应式尺寸（屏幕四分之一，留100px边距）
+- 使用anchor系统固定在窗口左下角（不随相机移动）
+- 固定尺寸（400x300像素，不随屏幕分辨率变化）
 - 支持动态标题和描述
 - Autoload单例模式（全局唯一实例）
+- 自动添加到场景树（解决Autoload Control节点显示问题）
 - 基于Control的原生UI交互
 - 内存安全（Godot引擎自动管理生命周期）
 
 ## 系统架构
 
-容器系统采用分层架构设计：
+简化的UI控制器系统架构：
 
 ```
-CtrlBase (Control)
-├── 定义容器UI结构
-├── 封装容器属性
-├── 提供布局方法
-└── 管理UI元素生命周期
+Autoload单例
+├── Ctrl400x300 - 信息面板单例
+│   ├── 基本显示功能
+│   └── 响应式布局
 
-CtrlUtil (Control)
-├── 管理容器实例
-├── 处理容器类型加载
-├── 控制容器生命周期
-└── 提供静态管理方法
-
-Prefabs/
-├── Ctrl400x300Pack (小控制器)
-├── 其他容器类型...
-└── 只关注特有属性和行为
+独立组件
+├── CameraCtrl - 相机控制器
+│   ├── 拖拽和缩放功能
+│   └── 卡牌检测逻辑
 ```
 
-## 重要特性
+## 设计原则
 
-控制器系统具有以下重要特性：
+遵循Godot最佳实践的简化设计：
 
-1. **Control实现**: 使用Godot原生Control节点，享受完整的UI系统支持
-2. **简化布局**: 使用简单的位置设置替代复杂的Anchor系统，避免显示问题
-3. **响应式缩放**: 根据屏幕分辨率动态计算尺寸，适应不同屏幕尺寸
-4. **Autoload单例**: 使用Godot官方推荐的Autoload机制实现单例模式
-5. **全局访问**: 通过Autoload名称在任何脚本中直接访问
-6. **内存安全**: Godot引擎自动管理Autoload生命周期，避免内存泄漏
-7. **自动布局**: 控制器自动定位到左下角，无需手动设置复杂的锚点
-8. **动态内容**: 支持动态设置标题和描述，适应不同使用场景
-9. **类型系统**: 通过类型字符串管理不同控制器类型，易于扩展
-10. **生命周期管理**: 完善的创建、初始化和销毁流程
-11. **UI层级**: 基于Control的自然层级管理，无需手动设置z_index
-
-## 注意事项
-
-1. **Autoload配置**: 需要在project.godot中正确配置Autoload才能使用
-2. **全局唯一**: Autoload确保全局只有一个实例，无需手动管理
-3. **响应式布局**: 容器会根据屏幕尺寸自动调整大小和位置
-4. **UI原生**: 基于Control实现，享受Godot UI系统的所有特性
-5. **初始化检查**: 使用is_initialized标志确保_ready方法只执行一次
-
-## 扩展性
-
-控制器系统设计具有良好的扩展性：
-
-- **新控制器类型**: 通过继承CtrlBase轻松添加
-- **简化布局**: 基于简单位置设置的布局系统，易于理解和维护
-- **响应式缩放**: 根据屏幕分辨率动态调整，适应不同屏幕
-- **插件化**: 控制器包可独立开发和测试
-- **动态加载**: 支持运行时动态加载不同类型的控制器
-- **自定义交互**: 每个控制器可定义独特的点击效果
-- **UI集成**: 与Godot UI系统完全集成，支持主题、样式等特性
+1. **最小化复杂性**: 只保留必要功能，避免过度设计
+2. **Autoload单例**: 使用官方推荐的单例模式
+3. **全局访问**: 简单直接的API调用
+4. **响应式布局**: 自动适应窗口变化

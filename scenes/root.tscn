@@ -1,9 +1,13 @@
-[gd_scene load_steps=3 format=3 uid="uid://b0b3bhwsxe03a"]
+[gd_scene load_steps=4 format=3 uid="uid://b0b3bhwsxe03a"]
 
 [ext_resource type="PackedScene" uid="uid://cye3wgdfifsdw" path="res://scenes/debug.tscn" id="1_ixvnl"]
 [ext_resource type="Script" uid="uid://bw5dohy8j5gx" path="res://scripts/utils/global_util_loader.gd" id="2_vxe4f"]
+[ext_resource type="Script" uid="uid://c84mq5r62i0lu" path="res://scripts/ctrl/camera_ctrl.gd" id="3_camera"]
 
 [node name="Root" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("3_camera")
 
 [node name="Debug" parent="." instance=ExtResource("1_ixvnl")]
 

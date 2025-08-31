@@ -73,6 +73,12 @@ const CTRL_Z_INDEX: int = 1000  # 控制器基础z_index
 const CTRL_UI_Z_INDEX: int = 1020  # 控制器UI元素z_index
 const CTRL_TITLE_Z_INDEX: int = 1015  # 控制器标题z_index
 
+# 相机相关常量
+const CAMERA_ZOOM_MIN: float = 0.5  # 相机最小缩放
+const CAMERA_ZOOM_MAX: float = 3.0  # 相机最大缩放
+const CAMERA_ZOOM_SPEED: float = 0.1  # 相机缩放速度
+const CAMERA_DRAG_SPEED: float = 1.0  # 相机拖拽速度
+
 # 获取所有常量的字典表示（用于调试）
 static func get_all_constants() -> Dictionary:
 	return {

@@ -60,6 +60,84 @@ RecipeUtil.register_recipe(["卡牌A", "卡牌B"], 3.0, "合成产物")
 var crafting_info = RecipeUtil.get_active_crafting_info()
 ```
 
+### recipe_constant.gd
+
+配方常量管理单例，用于存储所有配方数据：
+
+#### 主要功能
+- **配方数据存储**: 以JSON格式存储配方数据
+- **配方数据解析**: 解析和获取配方信息
+- **动态添加**: 支持动态添加新配方
+- **数据验证**: 配方数据格式验证
+
+#### 配方数据格式
+```json
+{
+  "ingredients": ["iron_shovel", "dirt_pile"],
+  "products": ["primary_flower_pot"],
+  "craft_time": 5.0
+}
+```
+
+#### 主要方法
+- `get_all_recipes()`: 获取所有配方数据
+- `add_recipe(ingredients, products, craft_time)`: 添加新配方
+
+### stack_util.gd
+
+卡牌堆叠管理工具，使用Autoload单例模式，管理所有卡牌的堆叠逻辑：
+
+#### 主要功能
+- **堆叠状态管理**: 管理所有卡牌的堆叠状态
+- **堆叠检测**: 自动检测和处理卡牌堆叠
+- **连带拖拽**: 支持堆叠卡牌的连带拖拽
+- **堆叠信息统计**: 提供堆叠信息的统计和显示
+- **合成检查集成**: 与配方系统集成，自动检查合成
+- **位置更新**: 自动更新堆叠中卡牌的位置
+
+#### 核心数据结构
+- `card_stacks: Dictionary`: 卡牌堆叠状态管理 {stack_id: [card1, card2, ...]}
+- `card_to_stack: Dictionary`: 卡牌到堆叠的映射 {card_instance_id: stack_id}
+- `stack_id_counter: int`: 堆叠ID计数器
+
+#### 主要方法
+- `cleanup_invalid_stacks()`: 清理无效的堆叠引用
+- `get_cards_above(card)`: 获取卡牌上方的所有卡牌（用于连带拖拽）
+- `is_in_stack(card)`: 检查卡牌是否在堆叠中
+- `get_stack_info(card)`: 获取卡牌所在堆叠的统计信息
+- `format_stack_info_for_display(card)`: 格式化堆叠信息用于显示
+- `check_stack_for_crafting(stack_id)`: 检查堆叠是否匹配配方并开始合成
+- `stack_card_on_target(source_card, target_card)`: 将卡牌堆叠到目标卡牌上
+- `stack_cards_on_target(source_cards, target_card)`: 将卡牌组堆叠到目标卡牌上
+- `update_stack_positions(stack_id)`: 更新堆叠中所有卡牌的位置
+- `find_stackable_card_at_position(position, exclude_card)`: 在指定位置查找可堆叠的卡牌
+- `try_stack_card(card, position)`: 检查并尝试堆叠卡牌
+- `get_stack_size(stack_id)`: 获取堆叠大小
+- `is_bottom_card(card, stack_id)`: 检查卡牌是否是堆叠底部卡牌
+- `get_stack_cards(stack_id)`: 获取堆叠中的卡牌数组
+
+#### 堆叠特性
+- **自动堆叠**: 当卡牌拖拽到其他卡牌附近时自动堆叠
+- **连带拖拽**: 拖拽堆叠中的卡牌时，上方的卡牌会一起移动
+- **位置管理**: 自动管理堆叠中卡牌的相对位置和偏移
+- **合成集成**: 堆叠形成时自动检查是否可以进行合成
+- **信息显示**: 提供堆叠信息的格式化显示功能
+- **无效清理**: 自动清理无效的堆叠引用和映射
+
+#### 使用方式
+```gdscript
+# 检查卡牌是否在堆叠中
+if StackUtil.is_in_stack(card):
+    var stack_info = StackUtil.get_stack_info(card)
+    print("堆叠信息: ", stack_info)
+
+# 尝试堆叠卡牌
+var success = StackUtil.try_stack_card(card, target_position)
+
+# 获取卡牌上方的所有卡牌（用于连带拖拽）
+var cards_above = StackUtil.get_cards_above(card)
+```
+
 ### global_constants.gd
 
 全局常量类，定义了游戏中使用的所有常量配置：

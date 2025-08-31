@@ -15,11 +15,10 @@
   - `debug/` - 调试相关脚本
   - `mobs/` - 怪物相关脚本
   - `utils/` - 全局工具脚本
-  - `ctrl/` - 控制器系统脚本
-    - `ctrl_base.gd` - 控制器基类
-    - `ctrl_util.gd` - 控制器工具类
-    - `prefabs/` - 控制器预制件目录
-      - `ctrl_400x300_pack.gd` - 小控制器预制件
+  - `ctrl/` - 简化的UI控制器系统
+    - `camera_ctrl.gd` - 相机控制器
+    - `prefabs/` - UI组件目录
+      - `ctrl_400_300.gd` - 信息面板（Autoload单例）
 
 ## 功能概述
 
