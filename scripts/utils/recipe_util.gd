@@ -132,6 +132,11 @@ func check_stack_for_recipe(stack_cards: Array) -> Recipe:
 	# 检查是否匹配任何配方
 	for recipe in recipes:
 		if _arrays_match(card_types, recipe.ingredients):
+			# 检查配方是否还有剩余次数
+			if not RecipeConstant.check_recipe_remaining_times(recipe.ingredients):
+				GlobalUtil.log("配方已无剩余使用次数: " + str(card_types), GlobalUtil.LogLevel.INFO)
+				return null
+			
 			GlobalUtil.log("找到匹配的配方: " + str(card_types) + " -> " + str(recipe.result_types), GlobalUtil.LogLevel.INFO)
 			return recipe
 	
