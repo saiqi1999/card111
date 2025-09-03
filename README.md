@@ -145,6 +145,87 @@ card.remove_fixed_decorator()
    - 管理卡牌组的层级关系
    - 智能合成检测和状态保持
 
+## Strange Stone 调用链路
+
+奇怪石堆(Strange Stone Pile)是游戏中的特殊卡牌，具有事件触发功能。以下是其完整的调用链路：
+
+### 1. 生成阶段
+
+**森林道路卡包** (`forest_road_card_pack.gd`)
+- 在第3次点击时，调用 `generate_initial_resources()` 方法
+- 生成包括 `strange_stone_pile` 在内的初始资源卡牌
+- 特别处理：给奇怪石堆添加 `event_1` 标签
+
+```gdscript
+# 森林道路生成奇怪石堆
+if type == "strange_stone_pile":
+    resource.add_tag("event_1")  # 添加事件标签
+```
+
+### 2. 卡牌实现
+
+**奇怪石堆卡包** (`strange_stone_pile_card_pack.gd`)
+- 继承自 `CardPackBase`
+- 初始化时添加 `fixed` 标签，防止拖动
+- 设置合成完成回调 `after_recipe_done`
+
+### 3. 合成触发链路
+
+**合成系统** (`recipe_util.gd`)
+1. 当奇怪石堆参与合成时，合成完成后调用 `_complete_crafting()`
+2. 遍历参与合成的卡牌，调用各自的 `after_recipe_done` 回调
+3. 奇怪石堆的回调被触发
+
+**奇怪石堆回调处理**
+1. 获取卡牌实例的所有标签
+2. 遍历标签，查找以 `event_` 开头的标签
+3. 提取事件ID（如 `event_1` -> ID: 1）
+4. 调用 `EventUtil.trigger_event(event_id)`
+
+### 4. 事件执行
+
+**事件系统** (`event_util.gd`)
+- `trigger_event(1)` 被调用
+- 执行事件1：移除右边(1,0)位置的遮罩层
+- 调用 `AreaUtil.set_fog_visible(1, 0, false)`
+
+**区域管理** (`area_util.gd`)
+- 设置指定位置的遮罩层不可见
+- 同时扩展卡牌和相机的移动边界
+- 调用 `_expand_bounds_for_fog_opening()` 方法
+
+### 5. 完整调用链
+
+```
+森林道路点击(第3次) 
+    ↓
+生成奇怪石堆 + 添加event_1标签
+    ↓
+玩家将奇怪石堆与其他卡牌合成
+    ↓
+合成系统检测到配方匹配
+    ↓
+合成完成，调用after_recipe_done回调
+    ↓
+奇怪石堆检查event_标签
+    ↓
+EventUtil.trigger_event(1)
+    ↓
+AreaUtil.set_fog_visible(1, 0, false)
+    ↓
+移除遮罩层 + 扩展移动边界
+    ↓
+奇怪石堆卡牌被回收
+```
+
+### 6. 关键文件
+
+- `forest_road_card_pack.gd`: 生成奇怪石堆并添加事件标签
+- `strange_stone_pile_card_pack.gd`: 奇怪石堆的具体实现
+- `recipe_util.gd`: 合成系统，调用after_recipe_done回调
+- `event_util.gd`: 事件系统，处理事件触发
+- `area_util.gd`: 区域管理，处理遮罩层和边界扩展
+
 ## 开发环境
 
 - Godot 4.4.1

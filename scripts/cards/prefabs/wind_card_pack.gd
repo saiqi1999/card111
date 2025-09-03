@@ -20,6 +20,9 @@ func _init():
 	
 	# 设置点击特效
 	on_click = wind_click_effect
+	
+	# 设置初始化后的回调
+	after_init = wind_after_init
 
 # 刮风卡牌的点击特效
 # 参数: card_instance - 触发点击的卡牌实例
@@ -63,8 +66,7 @@ func recycle_card(card_instance):
 	# 回收卡牌
 	card_instance.queue_free()
 
-# 重写after_init方法
-func after_init(card_instance):
-	super.after_init(card_instance)
+# 初始化后的回调方法
+func wind_after_init(card_instance):
 	# 启动回收定时器
 	start_recycle_timer(card_instance)

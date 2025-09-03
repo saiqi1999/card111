@@ -30,15 +30,25 @@
 
 ### 天气卡牌（雨、风）
 ```gdscript
+# 在初始化函数中设置 after_init 回调
+func _init():
+    # ... 其他初始化代码 ...
+    after_init = weather_after_init
+
 # 创建时自动启动回收定时器
-func after_init(card_instance):
+func weather_after_init(card_instance):
     start_recycle_timer(card_instance)
 ```
 
 ### 资源卡牌（碎木头、土堆）
 ```gdscript
+# 在初始化函数中设置 after_recipe_done 回调
+func _init():
+    # ... 其他初始化代码 ...
+    after_recipe_done = resource_after_recipe_done
+
 # 在合成3次后自动回收
-func after_recipe_done(card_instance, crafting_cards: Array):
+func resource_after_recipe_done(card_instance, crafting_cards: Array):
     recipe_count += 1
     if recipe_count >= 3:
         CardUtil.remove(card_instance)

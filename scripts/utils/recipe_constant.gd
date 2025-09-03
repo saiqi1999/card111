@@ -17,7 +17,9 @@ var RECIPES: Array[String] = [
 	# 碎木堆 + 铁斧 = 木材
 	'{"ingredients": ["wood_scraps", "iron_axe"], "products": ["wood"], "craft_time": 2.0}',
 	# 石堆 + 十字镐 = 由回调函数处理生成
-	'{"ingredients": ["stone_pile", "pickaxe"], "products": [], "craft_time": 2.0}'
+	'{"ingredients": ["stone_pile", "pickaxe"], "products": [], "craft_time": 2.0}',
+	# 十字镐 + 奇怪石堆 = 未激活奥秘
+	'{"ingredients": ["pickaxe", "strange_stone_pile"], "products": ["inactive_mystery"], "craft_time": 13.0}'
 ]
 
 # 获取所有配方数据
@@ -48,7 +50,9 @@ var recipe_remaining_times: Dictionary = {
 	# 铁斧配方只能使用一次
 	"[\"wood\",\"flint\"]" : 1,
 	# 十字镐配方只能使用一次
-	"[\"wood\",\"flint\",\"flint\"]" : 1
+	"[\"wood\",\"flint\",\"flint\"]" : 1,
+	# 十字镐 + 奇怪石堆配方只能使用一次
+	"[\"pickaxe\",\"strange_stone_pile\"]" : 1
 }
 
 # 检查配方是否还有剩余次数

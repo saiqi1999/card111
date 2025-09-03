@@ -19,6 +19,9 @@ func _init():
 	
 	# 设置点击特效
 	on_click = flint_click_effect
+	
+	# 设置合成完成后的回调
+	after_recipe_done = flint_after_recipe_done
 
 # 燧石卡牌的点击特效
 # 参数: card_instance - 触发点击的卡牌实例
@@ -30,8 +33,8 @@ func flint_click_effect(card_instance):
 	# 燧石的特效逻辑
 	GlobalUtil.log("燧石：坚硬的石头，敲击时能产生火花，是生火的重要工具", GlobalUtil.LogLevel.INFO)
 
-# 重写合成完成后的回调方法
-func after_recipe_done(card_instance, crafting_cards: Array):
+# 合成完成后的回调方法
+func flint_after_recipe_done(card_instance, crafting_cards: Array):
 	GlobalUtil.log("燧石卡包参与合成，开始回收", GlobalUtil.LogLevel.INFO)
 	# 通过卡牌实例访问 CardUtil 的静态方法
 	CardUtil.remove(card_instance)

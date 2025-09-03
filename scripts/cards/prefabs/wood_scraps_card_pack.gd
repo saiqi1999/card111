@@ -21,6 +21,9 @@ func _init():
 	
 	# 设置点击特效
 	on_click = wood_scraps_click_effect
+	
+	# 设置合成完成后的回调
+	after_recipe_done = wood_scraps_after_recipe_done
 
 # 碎木头卡牌的点击特效
 # 参数: card_instance - 触发点击的卡牌实例
@@ -33,8 +36,8 @@ func wood_scraps_click_effect(card_instance):
 	var wood_amount = randi() % 4 + 2  # 生成2-5的随机木材数量
 	GlobalUtil.log("碎木头：获得 " + str(wood_amount) + " 单位木材，可用于制作或燃烧", GlobalUtil.LogLevel.INFO)
 
-# 重写合成完成后的回调方法
-func after_recipe_done(card_instance, crafting_cards: Array):
+# 合成完成后的回调方法
+func wood_scraps_after_recipe_done(card_instance, crafting_cards: Array):
 	recipe_count += 1
 	GlobalUtil.log("碎木头卡包参与合成，当前计数: " + str(recipe_count), GlobalUtil.LogLevel.INFO)
 	

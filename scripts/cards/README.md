@@ -173,16 +173,26 @@ clear_tags()                 # 清空所有标签
 
 2. **合成效果**
    ```gdscript
+   # 在初始化函数中设置合成后的回调
+   func _init():
+       # ... 其他初始化代码 ...
+       after_recipe_done = custom_after_recipe_done
+   
    # 在卡包中处理合成后的效果
-   func after_recipe_done(card_instance, crafting_cards):
+   func custom_after_recipe_done(card_instance, crafting_cards):
        # 处理合成后的逻辑
        pass
    ```
 
 3. **自动回收**
    ```gdscript
+   # 在初始化函数中设置初始化后的回调
+   func _init():
+       # ... 其他初始化代码 ...
+       after_init = custom_after_init
+   
    # 在卡包中设置定时回收
-   func after_init(card_instance):
+   func custom_after_init(card_instance):
        start_recycle_timer(card_instance)
    ```
 
@@ -195,8 +205,13 @@ clear_tags()                 # 清空所有标签
 卡牌可以作为合成原料参与配方：
 
 ```gdscript
+# 在初始化函数中设置合成后回调
+func _init():
+    # ... 其他初始化代码 ...
+    after_recipe_done = custom_after_recipe_done
+
 # 在卡包中实现合成后回调
-func after_recipe_done(card_instance, crafting_cards):
+func custom_after_recipe_done(card_instance, crafting_cards):
     # 处理合成完成后的逻辑
     # 例如：增加使用计数、触发特殊效果等
     pass

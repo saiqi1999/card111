@@ -270,9 +270,9 @@ func load_from_card_type(type_name: String):
 	# 加载卡包数据
 	var result = load_from_card_pack(pack)
 	
-	# 调用after_init方法
-	if result and card_pack != null:
-		card_pack.after_init(self)
+	# 调用after_init回调
+	if result and card_pack != null and card_pack.after_init != null and card_pack.after_init.is_valid():
+		card_pack.after_init.call(self)
 	
 	return result
 

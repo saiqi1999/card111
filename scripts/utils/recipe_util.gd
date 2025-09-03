@@ -242,14 +242,14 @@ func _complete_crafting(task: CraftingTask):
 			GlobalUtil.log("卡牌 " + str(card.get_instance_id()) + " 没有关联的卡牌包", GlobalUtil.LogLevel.INFO)
 			continue
 		
-		# 检查卡牌包是否有after_recipe_done方法
-		if not card_pack.has_method("after_recipe_done"):
-			GlobalUtil.log("卡牌 " + str(card.get_instance_id()) + " 的卡牌包没有 after_recipe_done 方法", GlobalUtil.LogLevel.INFO)
+		# 检查卡牌包是否有after_recipe_done回调
+		if card_pack.after_recipe_done == null or not card_pack.after_recipe_done.is_valid():
+			GlobalUtil.log("卡牌包 " + card_pack.pack_name + " 没有 after_recipe_done 回调", GlobalUtil.LogLevel.INFO)
 			continue
 		
-		# 调用after_recipe_done方法
-		GlobalUtil.log("调用卡牌包 " + card_pack.pack_name + " 的 after_recipe_done 方法", GlobalUtil.LogLevel.INFO)
-		card_pack.after_recipe_done(card, cards_copy)
+		# 调用after_recipe_done回调
+		GlobalUtil.log("调用卡牌包 " + card_pack.pack_name + " 的 after_recipe_done 回调", GlobalUtil.LogLevel.INFO)
+		card_pack.after_recipe_done.call(card, cards_copy)
 	
 	# 合成完成后，重新检查堆叠是否仍能继续合成
 	_check_stack_for_continued_crafting(task.stack_id)

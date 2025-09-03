@@ -54,6 +54,10 @@ func set_fog_visible(grid_x: int, grid_y: int, visible: bool):
 	if fog_layers.has(grid_key):
 		fog_layers[grid_key].visible = visible
 		GlobalUtil.log("设置遮罩层(%d,%d)可见性: %s" % [grid_x, grid_y, visible], GlobalUtil.LogLevel.DEBUG)
+		
+		# 当打开遮罩层（设置为不可见）时，扩展移动边界
+		if not visible:
+			_expand_bounds_for_fog_opening(grid_x, grid_y)
 
 # 获取指定坐标的遮罩层
 func get_fog_layer(grid_x: int, grid_y: int) -> ColorRect:
@@ -105,6 +109,36 @@ static func reset_bounds():
 		GlobalConstants.CARD_MOVE_BOUNDS_SIZE
 	)
 	GlobalUtil.log("重置移动范围为默认值", GlobalUtil.LogLevel.DEBUG)
+
+# 根据打开的遮罩层扩展移动边界
+func _expand_bounds_for_fog_opening(grid_x: int, grid_y: int):
+	# 计算新区域的边界
+	var fog_position = GlobalConstants.get_fog_grid_position(grid_x, grid_y)
+	var fog_size = GlobalConstants.FOG_GRID_SIZE
+	
+	# 扩展卡牌移动边界
+	var new_card_min_x = min(card_move_bounds.position.x, fog_position.x)
+	var new_card_min_y = min(card_move_bounds.position.y, fog_position.y)
+	var new_card_max_x = max(card_move_bounds.end.x, fog_position.x + fog_size.x)
+	var new_card_max_y = max(card_move_bounds.end.y, fog_position.y + fog_size.y)
+	
+	card_move_bounds = Rect2(
+		Vector2(new_card_min_x, new_card_min_y),
+		Vector2(new_card_max_x - new_card_min_x, new_card_max_y - new_card_min_y)
+	)
+	
+	# 扩展相机移动边界
+	var new_camera_min_x = min(camera_move_bounds.position.x, fog_position.x)
+	var new_camera_min_y = min(camera_move_bounds.position.y, fog_position.y)
+	var new_camera_max_x = max(camera_move_bounds.end.x, fog_position.x + fog_size.x)
+	var new_camera_max_y = max(camera_move_bounds.end.y, fog_position.y + fog_size.y)
+	
+	camera_move_bounds = Rect2(
+		Vector2(new_camera_min_x, new_camera_min_y),
+		Vector2(new_camera_max_x - new_camera_min_x, new_camera_max_y - new_camera_min_y)
+	)
+	
+	GlobalUtil.log("扩展移动边界 - 卡牌: %s, 相机: %s" % [card_move_bounds, camera_move_bounds], GlobalUtil.LogLevel.DEBUG)
 
 # 获取区域信息（用于调试）
 static func get_area_info() -> Dictionary:

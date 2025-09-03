@@ -19,6 +19,9 @@ func _init():
 	
 	# 设置点击特效
 	on_click = wood_click_effect
+	
+	# 设置合成完成后的回调
+	after_recipe_done = wood_after_recipe_done
 
 # 木材卡牌的点击特效
 # 参数: card_instance - 触发点击的卡牌实例
@@ -30,8 +33,8 @@ func wood_click_effect(card_instance):
 	# 木材的特效逻辑
 	GlobalUtil.log("木材：坚实的木材，散发着自然的香气，是建造的重要材料", GlobalUtil.LogLevel.INFO)
 
-# 重写合成完成后的回调方法
-func after_recipe_done(card_instance, crafting_cards: Array):
+# 合成完成后的回调方法
+func wood_after_recipe_done(card_instance, crafting_cards: Array):
 	GlobalUtil.log("木材卡包参与合成，开始回收", GlobalUtil.LogLevel.INFO)
 	# 通过卡牌实例访问 CardUtil 的静态方法
 	CardUtil.remove(card_instance)

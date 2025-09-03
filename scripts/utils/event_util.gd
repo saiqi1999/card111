@@ -74,3 +74,19 @@ func _on_timer_timeout():
 			GlobalUtil.log("天气卡牌移动到：" + str(target_position), GlobalUtil.LogLevel.INFO)
 		else:
 			GlobalUtil.log("天气卡牌生成失败：" + weather_type, GlobalUtil.LogLevel.WARNING)
+
+# 触发指定ID的事件
+func trigger_event(event_id: int):
+	GlobalUtil.log("触发事件ID: " + str(event_id), GlobalUtil.LogLevel.INFO)
+	
+	match event_id:
+		1:
+			# 事件1：移除右边(0,1)位置的遮罩层
+			var area_util = get_node("/root/AreaUtil")
+			if area_util:
+				area_util.set_fog_visible(1, 0, false)
+				GlobalUtil.log("事件1执行：移除右边(1,0)位置的遮罩层", GlobalUtil.LogLevel.INFO)
+			else:
+				GlobalUtil.log("未找到AreaUtil节点，无法执行事件1", GlobalUtil.LogLevel.WARNING)
+		_:
+			GlobalUtil.log("未知事件ID: " + str(event_id), GlobalUtil.LogLevel.WARNING)

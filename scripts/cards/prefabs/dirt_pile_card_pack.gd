@@ -21,9 +21,12 @@ func _init():
 	
 	# 设置点击特效
 	on_click = dirt_pile_click_effect
+	
+	# 设置合成完成后的回调
+	after_recipe_done = dirt_pile_after_recipe_done
 
-# 重写合成完成后的回调方法
-func after_recipe_done(card_instance, crafting_cards: Array):
+# 合成完成后的回调方法
+func dirt_pile_after_recipe_done(card_instance, crafting_cards: Array):
 	recipe_count += 1
 	GlobalUtil.log("土堆卡包参与合成，当前计数: " + str(recipe_count), GlobalUtil.LogLevel.INFO)
 	

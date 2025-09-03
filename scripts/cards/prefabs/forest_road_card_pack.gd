@@ -84,19 +84,21 @@ func generate_initial_resources(card_instance):
 				CardUtil.move_card(resource, card_pos)
 				GlobalUtil.log("森林道路：生成了一张" + type + "卡牌，位置: " + str(card_pos), GlobalUtil.LogLevel.INFO)
 				
+				# 打印当前生成的卡牌类型
+				GlobalUtil.log("森林道路：正在生成卡牌类型: " + type, GlobalUtil.LogLevel.DEBUG)
+				
 				# 特别检查strange_stone_pile的fixed状态
 				if type == "strange_stone_pile":
 					# 等待一帧确保装饰器管理器初始化完成
-					await card_instance.get_tree().process_frame
-					if resource.has_method("is_fixed"):
-						var is_fixed = resource.is_fixed()
-						GlobalUtil.log("strange_stone_pile卡牌fixed状态: " + str(is_fixed), GlobalUtil.LogLevel.INFO)
-					if resource.has_method("get_tags"):
-						var tags = resource.get_tags()
-						GlobalUtil.log("strange_stone_pile卡牌标签: " + str(tags), GlobalUtil.LogLevel.INFO)
-					if resource.decorator_manager:
-						var decorator_tags = resource.decorator_manager.get_all_decorator_tags()
-						GlobalUtil.log("strange_stone_pile装饰器标签: " + str(decorator_tags), GlobalUtil.LogLevel.INFO)
+					# await card_instance.get_tree().process_frame
+					# 给奇怪石堆添加事件标签（使用卡牌实例的add_tag方法）
+					resource.add_tag("event_1")
+					GlobalUtil.log("森林道路：给奇怪石堆添加了event_1标签", GlobalUtil.LogLevel.INFO)
+					
+					# 打印调试信息
+					GlobalUtil.log("奇怪石堆fixed状态: " + str(resource.has_tag("fixed")), GlobalUtil.LogLevel.DEBUG)
+					GlobalUtil.log("奇怪石堆所有标签: " + str(resource.get_tags()), GlobalUtil.LogLevel.DEBUG)
+					GlobalUtil.log("奇怪石堆装饰器标签: " + str(resource.get_all_decorator_tags()), GlobalUtil.LogLevel.DEBUG)
 			else:
 				GlobalUtil.log("森林道路：" + type + "卡牌生成失败", GlobalUtil.LogLevel.WARNING)
 
