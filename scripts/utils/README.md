@@ -60,6 +60,68 @@
    - 自动限制超出范围的位置
    - 支持范围重置功能
 
+### recipe_util.gd
+
+配方管理工具类，负责处理游戏中的卡牌合成系统：
+
+#### 主要功能
+1. **配方管理**
+   - 从 `RecipeConstant` 加载配方数据
+   - 支持动态注册新配方
+   - 检查堆叠是否匹配配方
+
+2. **合成任务管理**
+   - 创建和管理合成任务
+   - 支持合成任务的暂停、恢复和转移
+   - 处理合成完成后的产物生成
+
+3. **进度条系统**
+   - 为每个合成堆叠显示进度条
+   - 实时更新合成进度
+   - 支持进度条的显示、隐藏和位置更新
+
+4. **核心方法**
+   - `start_crafting`: 开始合成任务
+   - `restore_crafting_task`: 恢复合成任务到新堆叠
+   - `show_progress_bar_for_stack`: 显示堆叠进度条
+   - `hide_progress_bar_for_stack`: 隐藏堆叠进度条
+   - `cancel_crafting`: 取消合成任务
+
+### stack_util.gd
+
+堆叠管理工具类，负责处理卡牌的堆叠逻辑和合成状态保持：
+
+#### 主要功能
+1. **堆叠管理**
+   - 创建、删除和管理卡牌堆叠
+   - 支持卡牌在堆叠间的移动
+   - 自动更新堆叠中卡牌的位置
+
+2. **合成状态保持**
+   - `stack_card_group_on_target_preserve_crafting`: 保持合成状态的堆叠操作
+   - `create_new_stack_with_cards_preserve_crafting`: 保持合成状态创建新堆叠
+   - `remove_from_current_stack_preserve_crafting`: 保持合成状态移除卡牌
+
+3. **智能合成检测**
+   - `check_stack_for_crafting`: 检查堆叠是否可以开始合成
+   - `cancel_crafting_task_for_stack`: 取消指定堆叠的合成任务
+   - 自动处理合成任务的转移和恢复
+
+### recipe_constant.gd
+
+配方常量定义文件，存储所有游戏配方数据：
+
+#### 主要功能
+1. **配方数据存储**
+   - 定义所有可用的合成配方
+   - 包含原料、产物和合成时间信息
+   - 支持配方使用次数限制
+
+2. **配方管理方法**
+   - `get_all_recipes`: 获取所有配方
+   - `add_recipe`: 动态添加新配方
+   - `decrease_recipe_remaining_times`: 减少配方剩余使用次数
+
 ### util.gd
 
 `util.gd` 是全局工具类，提供了一系列通用的工具方法和统一的日志管理系统：

@@ -1,7 +1,6 @@
 # 全局常量类
 # 用于存储游戏中的全局常量配置
-extends Resource
-class_name GlobalConstants
+extends Node
 
 # 卡牌池相关常量
 const CARD_POOL_SIZE: int = 33  # 卡牌池大小
@@ -14,11 +13,9 @@ const LOG_PREFIX: String = "[CardGame]"  # 日志前缀
 # 卡牌相关常量
 const CARD_WIDTH: float = 200.0  # 卡牌宽度
 const CARD_HEIGHT: float = 300.0  # 卡牌高度
-const CARD_DRAG_ALPHA: float = 0.5  # 拖拽时的透明度
-const CARD_NORMAL_ALPHA: float = 1.0  # 卡牌正常透明度
 
 # 动画相关常量
-const DEFAULT_MOVE_DURATION: float = 0.65  # 默认移动动画时长
+const DEFAULT_MOVE_DURATION: float = 0.25  # 默认移动动画时长
 const SLIDE_DURATION: float = 2.0  # 滑动动画时长
 
 # 随机移动相关常量
@@ -101,8 +98,6 @@ static func get_all_constants() -> Dictionary:
 		"LOG_PREFIX": LOG_PREFIX,
 		"CARD_WIDTH": CARD_WIDTH,
 		"CARD_HEIGHT": CARD_HEIGHT,
-		"CARD_DRAG_ALPHA": CARD_DRAG_ALPHA,
-		"CARD_NORMAL_ALPHA": CARD_NORMAL_ALPHA,
 		"DEFAULT_MOVE_DURATION": DEFAULT_MOVE_DURATION,
 		"SLIDE_DURATION": SLIDE_DURATION,
 		"RANDOM_MOVE_RANGE": RANDOM_MOVE_RANGE,

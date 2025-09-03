@@ -23,6 +23,7 @@ RecipeUtil="*res://scripts/utils/recipe_util.gd"
 StackUtil="*res://scripts/utils/stack_util.gd"
 EventUtil="*res://scripts/utils/event_util.gd"
 AreaUtil="*res://scripts/utils/area_util.gd"
+GlobalConstants="*res://scripts/utils/global_constants.gd"
 
 [display]
 

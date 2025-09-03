@@ -120,7 +120,7 @@ func check_stack_for_recipe(stack_cards: Array) -> Recipe:
 		return null
 	
 	# 获取堆叠中的卡牌类型
-	var card_types: Array[String] = []
+	var card_types = []
 	for card in stack_cards:
 		if card.has_method("get") and card.get("card_type") != "":
 			# 使用卡牌的类型名称（对应文件名）
@@ -156,6 +156,29 @@ func _arrays_match(array1: Array, array2: Array) -> bool:
 			return false
 	
 	return temp_array2.is_empty()
+
+# 恢复合成任务（保持原有进度）
+func restore_crafting_task(old_stack_id: String, new_stack_id: String, new_stack_cards: Array) -> bool:
+	# 查找原有的合成任务
+	var old_task = null
+	for task in active_crafting_tasks:
+		if task.stack_id == old_stack_id:
+			old_task = task
+			break
+	
+	if old_task == null:
+		GlobalUtil.log("未找到原有合成任务，堆叠ID: " + old_stack_id, GlobalUtil.LogLevel.DEBUG)
+		return false
+	
+	# 先隐藏原堆叠的进度条
+	hide_progress_bar_for_stack(int(old_stack_id))
+	
+	# 更新任务的堆叠ID和卡牌
+	old_task.stack_id = new_stack_id
+	old_task.cards = new_stack_cards
+	
+	GlobalUtil.log("恢复合成任务，从堆叠ID " + old_stack_id + " 到 " + new_stack_id + "，保持进度: " + str(old_task.get_progress()), GlobalUtil.LogLevel.INFO)
+	return true
 
 # 开始合成
 func start_crafting(stack_cards: Array, stack_id: String) -> bool:
@@ -200,10 +223,12 @@ func _complete_crafting(task: CraftingTask):
 	# 复制一份卡牌列表，避免在遍历过程中修改列表
 	var cards_copy = task.cards.duplicate()
 	
+	# 扣除配方使用次数
+	RecipeConstant.decrease_recipe_remaining_times(task.recipe.ingredients)
+	
 	# 调用参与合成卡牌的 after_recipe_done 方法
 	for card in cards_copy:
 		if card == null or not is_instance_valid(card):
-			GlobalUtil.log("发现无效的卡牌实例", GlobalUtil.LogLevel.INFO)
 			continue
 		
 		# 检查卡牌是否有get方法
@@ -326,9 +351,20 @@ func show_progress_bar_for_stack(stack_id: int):
 		GlobalUtil.log("堆叠ID " + str(stack_id) + " 不存在，无法显示进度条", GlobalUtil.LogLevel.WARNING)
 		return
 	
+	# 检查堆叠是否正在合成中
+	if not is_stack_crafting_by_id(stack_id):
+		GlobalUtil.log("堆叠ID " + str(stack_id) + " 没有正在进行的合成任务，无法显示进度条", GlobalUtil.LogLevel.DEBUG)
+		return
+	
 	# 如果进度条已存在，先销毁
 	if stack_id in stack_progress_bars:
-		hide_progress_bar_for_stack(stack_id)
+		var existing_bar = stack_progress_bars[stack_id]
+		if existing_bar != null and is_instance_valid(existing_bar):
+			GlobalUtil.log("堆叠ID " + str(stack_id) + " 的进度条已存在，跳过创建", GlobalUtil.LogLevel.DEBUG)
+			return
+		else:
+			# 清理无效的引用
+			stack_progress_bars.erase(stack_id)
 	
 	# 创建进度条实例
 	var progress_bar_script = preload("res://scripts/ui/crafting_progress_bar.gd")
@@ -387,3 +423,14 @@ func update_progress_bar_position_for_stack(stack_id: int):
 		var bottom_card = stack_cards[0]
 		var stack_height = GlobalConstants.CARD_HEIGHT + (stack_cards.size() - 1) * GlobalConstants.CARD_STACK_OFFSET
 		progress_bar.set_position_below_stack(bottom_card.global_position, stack_height)
+
+# 检查堆叠是否正在合成中
+func is_stack_crafting(stack_id: String) -> bool:
+	for task in active_crafting_tasks:
+		if task.stack_id == stack_id:
+			return true
+	return false
+
+# 检查堆叠是否正在合成中（整数版本）
+func is_stack_crafting_by_id(stack_id: int) -> bool:
+	return is_stack_crafting(str(stack_id))

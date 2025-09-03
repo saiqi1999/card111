@@ -62,13 +62,21 @@ func check_recipe_remaining_times(ingredients: Array[String]) -> bool:
 	
 	# 检查剩余次数
 	if recipe_remaining_times[key] > 0:
-		# 减少剩余次数
-		recipe_remaining_times[key] -= 1
 		GlobalUtil.log("配方 " + key + " 剩余使用次数: " + str(recipe_remaining_times[key]), GlobalUtil.LogLevel.INFO)
 		return true
 	
 	GlobalUtil.log("配方 " + key + " 已无剩余使用次数", GlobalUtil.LogLevel.INFO)
 	return false
+
+# 减少配方剩余次数
+func decrease_recipe_remaining_times(ingredients: Array[String]):
+	# 生成与字典中完全相同格式的key
+	var key = "[" + ",".join(ingredients.map(func(x): return "\"" + x + "\"")) + "]"
+	
+	if recipe_remaining_times.has(key) and recipe_remaining_times[key] > 0:
+		# 减少剩余次数
+		recipe_remaining_times[key] -= 1
+		GlobalUtil.log("配方 " + key + " 减少使用次数，剩余: " + str(recipe_remaining_times[key]), GlobalUtil.LogLevel.INFO)
 
 func _ready():
 	GlobalUtil.log("RecipeConstant 初始化完成，加载了 " + str(RECIPES.size()) + " 个配方", GlobalUtil.LogLevel.INFO)
