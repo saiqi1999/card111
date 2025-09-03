@@ -15,6 +15,9 @@ func _init():
 	# 设置卡牌数据
 	set_card_data("奇怪石堆", "散发着神秘气息的石头堆，似乎蕴含着未知的力量")
 	
+	# 添加fixed标签，防止拖动
+	add_tag("fixed")
+	
 	# 设置点击特效
 	on_click = strange_stone_pile_click_effect
 

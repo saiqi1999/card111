@@ -71,7 +71,8 @@ func generate_initial_resources(card_instance):
 		"flint": 3,
 		"wood": 1,
 		"wood_scraps": 1,
-		"stone_pile": 1
+		"stone_pile": 1,
+		"strange_stone_pile": 1
 	}
 	
 	# 生成初始资源卡牌，在较远的位置
@@ -82,6 +83,20 @@ func generate_initial_resources(card_instance):
 			if resource:
 				CardUtil.move_card(resource, card_pos)
 				GlobalUtil.log("森林道路：生成了一张" + type + "卡牌，位置: " + str(card_pos), GlobalUtil.LogLevel.INFO)
+				
+				# 特别检查strange_stone_pile的fixed状态
+				if type == "strange_stone_pile":
+					# 等待一帧确保装饰器管理器初始化完成
+					await card_instance.get_tree().process_frame
+					if resource.has_method("is_fixed"):
+						var is_fixed = resource.is_fixed()
+						GlobalUtil.log("strange_stone_pile卡牌fixed状态: " + str(is_fixed), GlobalUtil.LogLevel.INFO)
+					if resource.has_method("get_tags"):
+						var tags = resource.get_tags()
+						GlobalUtil.log("strange_stone_pile卡牌标签: " + str(tags), GlobalUtil.LogLevel.INFO)
+					if resource.decorator_manager:
+						var decorator_tags = resource.decorator_manager.get_all_decorator_tags()
+						GlobalUtil.log("strange_stone_pile装饰器标签: " + str(decorator_tags), GlobalUtil.LogLevel.INFO)
 			else:
 				GlobalUtil.log("森林道路：" + type + "卡牌生成失败", GlobalUtil.LogLevel.WARNING)
 

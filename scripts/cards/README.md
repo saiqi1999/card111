@@ -4,16 +4,21 @@
 
 ```
 /scripts/cards/
-├── card_pack_base.gd    # 卡包基类
-├── card_util.gd         # 卡牌工具类
-├── prefabs/             # 卡牌预制体目录
-│   ├── README.md       # 预制体说明文档
+├── card_pack_base.gd           # 卡包基类
+├── card_util.gd                # 卡牌工具类
+├── card_decorator_base.gd      # 装饰器基类
+├── card_decorator_manager.gd   # 装饰器管理器
+├── decorators/                 # 装饰器目录
+│   ├── README.md              # 装饰器系统文档
+│   └── fixed_decorator.gd     # 固定装饰器
+├── prefabs/                    # 卡牌预制体目录
+│   ├── README.md              # 预制体说明文档
 │   ├── strike_card_pack.gd
 │   ├── defend_card_pack.gd
-│   ├── wind_card_pack.gd   # 刮风卡牌
-│   ├── rain_card_pack.gd   # 下雨卡牌
+│   ├── wind_card_pack.gd      # 刮风卡牌
+│   ├── rain_card_pack.gd      # 下雨卡牌
 │   └── ...
-└── README.md           # 本文档
+└── README.md                  # 本文档
 ```
 
 ## 核心组件
@@ -30,6 +35,16 @@ var card_description: String # 卡牌描述
 var card_type: String       # 卡牌类型标识符
 var on_click: Callable      # 点击效果回调
 var pack_image: String      # 卡牌图片路径
+var tags: Array[String] = [] # 卡牌标签数组（装饰器系统）
+```
+
+**标签系统方法：**
+```gdscript
+add_tag(tag: String)         # 添加标签
+remove_tag(tag: String)      # 移除标签
+has_tag(tag: String) -> bool # 检查标签是否存在
+get_tags() -> Array[String]  # 获取所有标签
+clear_tags()                 # 清空所有标签
 ```
 
 生命周期方法：
@@ -46,7 +61,7 @@ var pack_image: String      # 卡牌图片路径
 1. **卡牌池管理**
    - `initialize_card_pool()`: 初始化卡牌池
    - `get_card_from_pool()`: 从池中获取卡牌
-   - `remove()`: 回收卡牌到池中
+   - `remove()`: 回收卡牌到池中，完整清理装饰器管理器和标签系统
 
 2. **卡牌创建**
    - `create_card_from_pool()`: 从池中创建卡牌
@@ -63,6 +78,16 @@ var pack_image: String      # 卡牌图片路径
    - `check_and_stack_card()`: 检查并堆叠卡牌
    - `stack_card_group_on_target()`: 堆叠卡牌组
    - `remove_from_current_stack()`: 从当前堆叠移除
+
+5. **装饰器系统**
+   - `add_fixed_decorator()`: 添加固定装饰器，防止拖动
+   - `remove_fixed_decorator()`: 移除固定装饰器
+   - `is_fixed() -> bool`: 检查卡牌是否被固定
+   - `add_decorator(decorator_class)`: 添加指定类型的装饰器
+   - `remove_decorator(tag) -> bool`: 移除指定标签的装饰器
+   - `has_decorator(tag) -> bool`: 检查是否存在指定装饰器
+   - `get_all_decorator_tags() -> Array[String]`: 获取所有装饰器标签
+   - `is_card_fixed(card) -> bool`: 静态方法，检查任意卡牌是否被固定
 
 ### 3. 区域管理 (AreaUtil)
 
@@ -126,6 +151,16 @@ var pack_image: String      # 卡牌图片路径
    CardUtil.remove(card_instance)
    ```
 
+### 卡牌回收
+
+卡牌回收时会执行以下步骤：
+1. 清理装饰器管理器（调用destroy方法并置空）
+2. 清理卡牌标签系统（调用clear_tags方法）
+3. 从场景树中移除卡牌节点
+4. 注销事件监听器
+5. 重置卡牌状态
+6. 返回到卡牌池中等待复用
+
 ## 卡牌交互类型
 
 1. **点击效果**
@@ -187,6 +222,56 @@ func after_recipe_done(card_instance, crafting_cards):
 - 系统自动匹配可用配方
 - 符合条件时立即开始合成
 - 显示合成进度条和剩余时间
+
+## 装饰器系统 (Decorator System)
+
+装饰器系统使用装饰器设计模式为卡牌实例动态添加额外的行为和属性。通过标签系统，可以灵活地管理卡牌的特殊状态和功能。
+
+### 核心组件
+
+1. **CardDecoratorBase**: 装饰器基类，定义装饰器的基本接口
+2. **CardDecoratorManager**: 装饰器管理器，统一管理单个卡牌的所有装饰器
+3. **FixedDecorator**: 固定装饰器，为卡牌添加"fixed"标签，防止拖动
+
+### 设计原理
+
+- **标签系统**: 标签存储在 `CardPackBase.tags` 数组中，作为卡包的可继承字段
+- **装饰器模式**: 通过装饰器动态添加和移除卡牌行为，不修改原有代码结构
+- **统一管理**: 每个卡牌实例都有一个装饰器管理器，负责管理所有装饰器
+
+### 使用示例
+
+```gdscript
+# 基本使用
+var card = get_card_instance()
+
+# 添加固定装饰器
+card.add_fixed_decorator()
+print("卡牌已被固定，无法拖动")
+
+# 检查卡牌状态
+if card.is_fixed():
+    print("卡牌被固定")
+
+# 移除固定装饰器
+card.remove_fixed_decorator()
+print("卡牌可以正常拖动")
+
+# 直接操作标签
+card.card_pack.add_tag("special")
+if card.card_pack.has_tag("special"):
+    print("这是特殊卡牌")
+```
+
+### 扩展性
+
+装饰器系统具有良好的扩展性，可以轻松添加新的装饰器类型：
+
+1. 继承 `CardDecoratorBase` 创建新装饰器
+2. 在 `CardDecoratorManager` 中注册新装饰器类型
+3. 在 `CardUtil` 中添加便捷方法
+
+详细信息请参考 [装饰器系统文档](decorators/README.md)
 
 ## 注意事项
 

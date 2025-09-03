@@ -10,6 +10,7 @@ var card_name: String = "未命名卡牌"
 var card_description: String = "无描述"
 var card_type: String = ""  # 卡牌类型标识符，对应文件名
 var on_click: Callable = Callable()  # 卡牌点击时的个性化效果
+var tags: Array[String] = []  # 卡牌标签数组，用于标记卡牌的特殊属性
 
 # 卡包图片资源
 @export var pack_image: Texture2D = preload("res://assets/images/card_template.png")
@@ -45,3 +46,26 @@ func after_init(card_instance):
 # crafting_cards: 参与合成的卡牌列表
 func after_recipe_done(card_instance, crafting_cards: Array):
 	pass
+
+# 标签管理方法
+# 添加标签
+func add_tag(tag: String):
+	if not has_tag(tag):
+		tags.append(tag)
+
+# 移除标签
+func remove_tag(tag: String):
+	if has_tag(tag):
+		tags.erase(tag)
+
+# 检查是否有指定标签
+func has_tag(tag: String) -> bool:
+	return tag in tags
+
+# 获取所有标签
+func get_tags() -> Array[String]:
+	return tags.duplicate()
+
+# 清空所有标签
+func clear_tags():
+	tags.clear()

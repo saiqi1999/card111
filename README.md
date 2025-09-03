@@ -23,11 +23,35 @@
 
 卡牌系统由以下核心组件构成：
 
-1. **CardPackBase**：卡包基类，定义卡牌基本属性和行为
-2. **CardUtil**：卡牌工具类，提供卡牌管理和交互功能
+1. **CardPackBase**：卡包基类，定义卡牌基本属性和行为，包含标签系统
+2. **CardUtil**：卡牌工具类，提供卡牌管理和交互功能，包含完整的资源清理机制
 3. **卡牌预制体**：各类卡牌的具体实现
+4. **装饰器系统**：使用装饰器模式为卡牌动态添加行为和标签，支持完整的生命周期管理
 
-详细信息请参考 [卡牌系统文档](scripts/cards/README.md)
+#### 装饰器系统
+
+装饰器系统基于装饰器设计模式，为卡牌提供动态行为扩展：
+
+- **CardDecoratorBase**：装饰器基类，定义装饰器生命周期方法
+- **FixedDecorator**：固定装饰器，禁用卡牌拖拽功能
+- **CardDecoratorManager**：装饰器管理器，统一管理卡牌装饰器，支持自动初始化和完整清理
+
+装饰器系统与标签系统深度集成，通过标签状态管理装饰器的生命周期，确保资源的正确分配和回收。
+
+**使用示例：**
+```gdscript
+# 添加固定装饰器，防止卡牌被拖动
+card.add_fixed_decorator()
+
+# 检查卡牌是否被固定
+if card.is_fixed():
+    print("卡牌已被固定")
+
+# 移除固定装饰器
+card.remove_fixed_decorator()
+```
+
+详细信息请参考 [卡牌系统文档](scripts/cards/README.md) 和 [装饰器系统文档](scripts/cards/decorators/README.md)
 
 ### 2. 区域管理系统
 

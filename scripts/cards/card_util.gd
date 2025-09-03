@@ -5,6 +5,8 @@ extends Node2D
 
 # 预加载工具类
 const AreaUtil = preload("res://scripts/utils/area_util.gd")
+const CardDecoratorManager = preload("res://scripts/cards/card_decorator_manager.gd")
+const FixedDecorator = preload("res://scripts/cards/decorators/fixed_decorator.gd")
 
 # 确保StackUtil可用（虽然它是autoload，但明确引用以避免IDE警告）
 # StackUtil已在project.godot中注册为autoload单例
@@ -42,6 +44,9 @@ static var all_cards: Array[Node2D] = []  # 所有卡牌实例的引用
 
 # 当前卡牌所属的堆叠ID，-1表示不在任何堆叠中
 var stack_id: int = -1
+
+# 装饰器管理器
+var decorator_manager: CardDecoratorManager = null
 
 
 
@@ -172,6 +177,11 @@ func _ready():
 
 # 当节点退出场景树时调用
 func _exit_tree():
+	# 清理装饰器管理器
+	if decorator_manager:
+		decorator_manager.destroy()
+		decorator_manager = null
+	
 	# 从堆叠系统中移除
 	remove_from_current_stack()
 	# 注销卡牌
@@ -234,6 +244,12 @@ func load_from_card_pack(p_card_pack):
 		
 		# 设置卡牌数据，包括点击效果
 		set_card_data(card_data.name, card_data.description, card_data.image, card_data.on_click)
+		
+		# 初始化装饰器管理器（在card_pack设置之后）
+		if not decorator_manager:
+			decorator_manager = CardDecoratorManager.new(self)
+			GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 装饰器管理器初始化完成", GlobalUtil.LogLevel.DEBUG)
+		
 		return true
 	return false
 
@@ -430,6 +446,15 @@ func _on_card_input_event(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 检测到鼠标左键按下", GlobalUtil.LogLevel.DEBUG)
+			
+			# 检查卡牌是否被固定，如果被固定则不允许拖拽
+			if decorator_manager and decorator_manager.is_fixed():
+				GlobalUtil.log("卡牌被固定，不允许拖拽", GlobalUtil.LogLevel.DEBUG)
+				# 仍然可以触发点击事件
+				if on_click.is_valid():
+					GlobalUtil.log("触发固定卡牌的点击效果", GlobalUtil.LogLevel.DEBUG)
+					on_click.call(self)
+				return
 			
 			# 检查当前卡牌是否是点击位置的最上层卡牌
 			var mouse_pos = get_global_mouse_position()
@@ -635,6 +660,17 @@ static func remove(card: Node2D):
 	if card.has_method("unregister_card"):
 		card.unregister_card()
 	
+	# 清理装饰器管理器
+	if card.decorator_manager:
+		card.decorator_manager.destroy()
+		card.decorator_manager = null
+		GlobalUtil.log("卡牌实例ID:" + str(card.get_instance_id()) + " 装饰器管理器已清理", GlobalUtil.LogLevel.DEBUG)
+	
+	# 清理card_pack中的tags
+	if card.card_pack:
+		card.card_pack.clear_tags()
+		GlobalUtil.log("卡牌实例ID:" + str(card.get_instance_id()) + " card_pack标签已清理", GlobalUtil.LogLevel.DEBUG)
+	
 	# 重置卡牌状态
 	card.position = hidden_position
 	card.card_name = "未命名卡牌"
@@ -734,3 +770,77 @@ func get_stack_info() -> Dictionary:
 # 格式化堆叠信息为显示文本
 func format_stack_info_for_display() -> Dictionary:
 	return StackUtil.format_stack_info_for_display(self)
+
+# ========== 装饰器相关方法 ==========
+
+# 添加固定装饰器，防止卡牌被拖动
+func add_fixed_decorator():
+	if decorator_manager:
+		return decorator_manager.add_fixed_decorator()
+	return null
+
+# 移除固定装饰器，恢复卡牌拖动功能
+func remove_fixed_decorator() -> bool:
+	if decorator_manager:
+		return decorator_manager.remove_fixed_decorator()
+	return false
+
+# 检查卡牌是否被固定
+func is_fixed() -> bool:
+	if decorator_manager:
+		return decorator_manager.is_fixed()
+	return false
+
+# 添加自定义装饰器
+func add_decorator(decorator_class, tag: String = ""):
+	if decorator_manager:
+		return decorator_manager.add_decorator(decorator_class, tag)
+	return null
+
+# 移除指定装饰器
+func remove_decorator(tag: String) -> bool:
+	if decorator_manager:
+		return decorator_manager.remove_decorator(tag)
+	return false
+
+# 检查是否有指定装饰器
+func has_decorator(tag: String) -> bool:
+	if decorator_manager:
+		return decorator_manager.has_decorator(tag)
+	return false
+
+# 获取所有装饰器标签
+func get_all_decorator_tags() -> Array[String]:
+	if decorator_manager:
+		return decorator_manager.get_all_decorator_tags()
+	return []
+
+# 静态方法：检查任意卡牌是否被固定
+static func is_card_fixed(card_instance: Node2D) -> bool:
+	return FixedDecorator.is_card_fixed(card_instance)
+
+# ========== 标签相关方法（从关联的card_pack获取） ==========
+
+# 获取卡牌标签（从关联的card_pack获取）
+func get_tags() -> Array[String]:
+	if card_pack:
+		return card_pack.get_tags()
+	return []
+
+# 检查卡牌是否有指定标签（从关联的card_pack检查）
+func has_tag(tag: String) -> bool:
+	if card_pack:
+		return card_pack.has_tag(tag)
+	return false
+
+# 添加标签到关联的card_pack
+func add_tag(tag: String):
+	if card_pack:
+		card_pack.add_tag(tag)
+		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 添加标签: " + tag, GlobalUtil.LogLevel.DEBUG)
+
+# 从关联的card_pack移除标签
+func remove_tag(tag: String):
+	if card_pack:
+		card_pack.remove_tag(tag)
+		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 移除标签: " + tag, GlobalUtil.LogLevel.DEBUG)
