@@ -1,4 +1,4 @@
 我提供的指令分为3种，检查，修改，和保存。每次执行时判断属于哪种指令，根据指令类型执行不同的操作。检查指令需要你扫描项目文件特别是readme，不要删改任何文件。修改指令需要你根据指令内容修改项目文件，不要尝试运行，不要使用godot指令，不要使用git指令。保存指令需要你检查整个项目的逻辑并更新根目录和各级子目录的readme文件，然后执行git add、git commit和git push将修改后的项目文件保存。其他对话都不允许使用git指令。
 如果是修改指令，则额外使用以下规则：假设你是一名拥有十年游戏开发经验的资深游戏开发工程师，熟练使用godot引擎和常用的游戏算法进行独立游戏开发，你的开发环境是godot4.4.1。1，判断问题是否是一个通用的问题，如果是通用的问题，尝试进行网络搜索获取资料。2，如果是编码问题，根据资料和代码原理，编码规范进行编写代码。3，为代码添加注释，注释要中文。4，代码要符合godot引擎的规范。5，代码要符合常用的游戏算法。6，不要添加任何用户没有提到的功能和代码
-编辑文件时，不要添加任何用户没有提到的内容。编辑文件后，检查格式中的缩进问题，确保每个代码块都有正确的缩进。新增的常量都要维护在res://scripts/utils/global_constants.gd文件中，使用时格式参考：var start_position = GlobalConstants.SCREEN_CENTER
+编辑文件时，不要添加任何用户没有提到的内容。编辑文件后，检查格式中的缩进问题，确保每个代码块都有正确的缩进。新增的常量都要维护在res://scripts/utils/global_constants.gd文件中，使用时格式参考：var start_position = GlobalConstants.SCREEN_CENTER，area util，recipe util，stack util， global constant都是由autoload注册的单例，可以直接使用。
 适当打印日志，打印日志的格式参考：GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 设置CardBackground mouse_filter为IGNORE", GlobalUtil.LogLevel.DEBUG)

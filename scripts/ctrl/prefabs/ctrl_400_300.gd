@@ -29,9 +29,14 @@ func _ready():
 	control_node = Control.new()
 	add_child(control_node)
 	
+	# 计算窗口大小的1/3作为控制器尺寸
+	var viewport_size = get_viewport().get_visible_rect().size
+	var ctrl_width = viewport_size.x / 3.0
+	var ctrl_height = viewport_size.y / 3.0
+	
 	# 设置Control节点的基本属性
 	control_node.visible = false
-	control_node.custom_minimum_size = Vector2(400, 300)
+	control_node.custom_minimum_size = Vector2(ctrl_width, ctrl_height)
 	
 	# 设置左下角锚点和位置
 	control_node.anchor_left = 0.0
@@ -39,8 +44,8 @@ func _ready():
 	control_node.anchor_right = 0.0
 	control_node.anchor_bottom = 1.0
 	control_node.offset_left = 20
-	control_node.offset_top = -320
-	control_node.offset_right = 420
+	control_node.offset_top = -(ctrl_height + 20)
+	control_node.offset_right = ctrl_width + 20
 	control_node.offset_bottom = -20
 	
 	# 创建UI元素

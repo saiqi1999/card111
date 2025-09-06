@@ -123,8 +123,8 @@ func _expand_bounds_for_fog_opening(grid_x: int, grid_y: int):
 	var new_card_max_y = max(card_move_bounds.end.y, fog_position.y + fog_size.y)
 	
 	card_move_bounds = Rect2(
-		Vector2(new_card_min_x, new_card_min_y),
-		Vector2(new_card_max_x - new_card_min_x, new_card_max_y - new_card_min_y)
+		Vector2(new_card_min_x, new_card_min_y + GlobalConstants.CARD_HEIGHT/2),
+		Vector2(new_card_max_x - new_card_min_x - GlobalConstants.CARD_WIDTH/2, new_card_max_y - new_card_min_y - GlobalConstants.CARD_HEIGHT)
 	)
 	
 	# 扩展相机移动边界
@@ -139,6 +139,10 @@ func _expand_bounds_for_fog_opening(grid_x: int, grid_y: int):
 	)
 	
 	GlobalUtil.log("扩展移动边界 - 卡牌: %s, 相机: %s" % [card_move_bounds, camera_move_bounds], GlobalUtil.LogLevel.DEBUG)
+
+# 获取当前区域边界（返回卡牌移动边界）
+static func get_current_bounds() -> Rect2:
+	return card_move_bounds
 
 # 获取区域信息（用于调试）
 static func get_area_info() -> Dictionary:

@@ -22,6 +22,12 @@ const SLIDE_DURATION: float = 2.0  # 滑动动画时长
 const RANDOM_MOVE_RANGE: int = 500  # 随机移动范围
 const CENTER_AVOID_RANGE: int = 350  # 中心避让范围
 
+# 卡牌生成位置相关常量（基于卡牌尺寸）
+const CARD_SPAWN_MIN_DISTANCE_CLOSE: float = CARD_WIDTH * 1.5  # 近距离生成最小距离（100）
+const CARD_SPAWN_MAX_DISTANCE_CLOSE: float = CARD_WIDTH * 2.5  # 近距离生成最大距离（300）
+const CARD_SPAWN_MIN_DISTANCE_FAR: float = CARD_WIDTH * 3.0  # 远距离生成最小距离（600）
+const CARD_SPAWN_MAX_DISTANCE_FAR: float = CARD_WIDTH * 5.0  # 远距离生成最大距离（1000）
+
 # 屏幕相关常量
 const SCREEN_CENTER: Vector2 = Vector2(1920, 1080)  # 屏幕中心位置（4K分辨率下的中心点）
 const SCREEN_LEFT_OUTSIDE: Vector2 = Vector2(-200, 1080)  # 屏幕左侧外部位置

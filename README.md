@@ -231,9 +231,77 @@ AreaUtil.set_fog_visible(1, 0, false)
 - Godot 4.4.1
 - GDScript
 
+## 通用方法使用指南
+
+### 1. 卡牌生成与移动
+
+#### 正确的卡牌生成流程
+```gdscript
+# 1. 先在原位置生成卡牌
+var card = CardUtil.create_card_from_pool(root, "card_type", original_position)
+if card:
+    # 2. 再移动到目标位置
+    CardUtil.move_card(card, target_position)
+    GlobalUtil.log("生成卡牌并移动到位置: " + str(target_position), GlobalUtil.LogLevel.INFO)
+```
+
+#### 位置生成与避让
+```gdscript
+# 使用全局常量定义距离参数
+var target_position = CardUtil.get_valid_position(
+    base_position, 
+    GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE,  # 最小距离
+    GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE   # 最大距离
+)
+```
+
+### 2. 全局常量管理
+
+#### 卡牌生成距离常量
+```gdscript
+# 在 GlobalConstants 中定义的常量
+const CARD_SPAWN_MIN_DISTANCE_CLOSE: float = CARD_WIDTH * 0.5   # 近距离最小距离（100.0）
+const CARD_SPAWN_MAX_DISTANCE_CLOSE: float = CARD_WIDTH * 1.5   # 近距离最大距离（300.0）
+const CARD_SPAWN_MIN_DISTANCE_FAR: float = CARD_WIDTH * 3.0     # 远距离最小距离（600.0）
+const CARD_SPAWN_MAX_DISTANCE_FAR: float = CARD_WIDTH * 5.0     # 远距离最大距离（1000.0）
+
+# 使用方式
+var pos = CardUtil.get_valid_position(base_pos, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+```
+
+### 3. 位置避让系统
+
+#### 基于现有卡牌的位置避让
+```gdscript
+# CardUtil.get_valid_position 会自动检查与现有卡牌的距离
+# 内部使用 all_cards 数组进行避让计算，无需手动管理位置记录
+static func is_position_overlapping(pos: Vector2, min_spacing: float) -> bool:
+    for card in all_cards:
+        if card == null or not is_instance_valid(card):
+            continue
+        if pos.distance_to(card.global_position) < min_spacing:
+            return true
+    return false
+```
+
+### 4. 日志记录规范
+
+#### 标准日志格式
+```gdscript
+# 带卡牌实例ID的日志
+GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " 执行操作描述", GlobalUtil.LogLevel.INFO)
+
+# 位置相关日志
+GlobalUtil.log("操作描述，位置: " + str(position), GlobalUtil.LogLevel.INFO)
+
+# 错误日志
+GlobalUtil.log("操作失败原因", GlobalUtil.LogLevel.WARNING)
+```
+
 ## 注意事项
 
-1. 创建新卡牌时使用卡牌池系统
-2. 移动卡牌时使用CardUtil提供的方法
-3. 确保正确处理卡牌的生命周期
-4. 注意边界检查和范围限制
+1. **卡牌生成**：始终先在原位置生成，再移动到目标位置
+2. **常量使用**：使用GlobalConstants中的常量替代魔法值
+3. **位置避让**：依赖CardUtil.all_cards自动避让，无需手动管理
+4. **生命周期**：确保正确处理卡牌的创建、移动和回收
+5. **边界检查**：所有位置操作都会自动进行边界限制

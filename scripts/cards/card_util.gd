@@ -695,11 +695,14 @@ static func remove(card: Node2D):
 	GlobalUtil.log("卡牌已移除并返回池中，ID: " + str(card.get_instance_id()), GlobalUtil.LogLevel.DEBUG)
 	GlobalUtil.log("卡牌已返回池中，池大小: " + str(card_pool.size()), GlobalUtil.LogLevel.DEBUG)
 
-# 瞬移卡牌到目标位置，这个不限制位置，方便场景布置和扩张
+# 瞬移卡牌到目标位置，受到card area限制
 static func goto_card(card: Node2D, target_position: Vector2):
 	if card == null or not is_instance_valid(card):
 		GlobalUtil.log("goto_card: 无效的卡牌实例", GlobalUtil.LogLevel.ERROR)
 		return
+	
+	# 限制目标位置在允许范围内
+	target_position = AreaUtil.clamp_card_position(target_position)
 	
 	# 停止当前动画
 	if card.active_tween != null and card.active_tween.is_valid():
@@ -713,7 +716,7 @@ static func goto_card(card: Node2D, target_position: Vector2):
 	if card.has_method("bring_to_front"):
 		card.bring_to_front()
 	
-	GlobalUtil.log("卡牌瞬移到位置: " + str(target_position), GlobalUtil.LogLevel.DEBUG)
+	GlobalUtil.log("卡牌瞬移到限制范围内的位置: " + str(target_position), GlobalUtil.LogLevel.DEBUG)
 
 # 获取卡牌池状态信息
 static func get_card_pool_info() -> String:
@@ -844,3 +847,37 @@ func remove_tag(tag: String):
 	if card_pack:
 		card_pack.remove_tag(tag)
 		GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 移除标签: " + tag, GlobalUtil.LogLevel.DEBUG)
+
+# 位置生成现在直接使用all_cards变量来避免与现有卡牌重叠
+
+# 静态方法：生成随机位置
+static func generate_random_position(base_position: Vector2, min_distance: float, max_distance: float) -> Vector2:
+	var angle = randf() * 2 * PI
+	var distance = randf_range(min_distance, max_distance)
+	return base_position + Vector2(cos(angle) * distance, sin(angle) * distance)
+
+# 静态方法：检查位置是否与现有卡牌位置重叠
+static func is_position_overlapping(pos: Vector2, min_spacing: float) -> bool:
+	# 遍历所有现有卡牌，检查位置是否重叠
+	for card in all_cards:
+		if card == null or not is_instance_valid(card):
+			continue
+		# 检查与现有卡牌位置的距离
+		if pos.distance_to(card.global_position) < min_spacing:
+			return true
+	return false
+
+# 静态方法：获取有效的随机位置（避免与现有卡牌重叠）
+static func get_valid_position(base_position: Vector2, min_distance: float, max_distance: float, min_spacing: float = 400.0) -> Vector2:
+	var attempts = 0
+	while attempts < 23: # 最多尝试23次
+		var pos = generate_random_position(base_position, min_distance, max_distance)
+		if not is_position_overlapping(pos, min_spacing):
+			return pos
+		attempts += 1
+	
+	# 如果23次都没找到合适的位置，返回最后一次生成的位置
+	var final_pos = generate_random_position(base_position, min_distance, max_distance)
+	return final_pos
+
+# 注意：位置生成现在直接基于all_cards，无需手动清空位置记录
