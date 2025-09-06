@@ -145,6 +145,29 @@ card.remove_fixed_decorator()
    - 管理卡牌组的层级关系
    - 智能合成检测和状态保持
 
+### 6. 收割系统
+
+收割系统允许玩家使用镰刀收割蓝莓丛，获得蓝莓和魔法气息：
+
+1. **收割配方**
+   - 镰刀 + 小蓝莓丛：合成时间2.0秒，小蓝莓丛有3次耐久
+   - 镰刀 + 大蓝莓丛：合成时间3.0秒，大蓝莓丛有5次耐久
+
+2. **收割产出**
+   - 每次收割必定产出1个蓝莓
+   - 第一次收割必定产出小魔法气息
+   - 后续收割有50%几率产出小魔法气息
+
+3. **耐久度机制**
+   - 每次收割后耐久度减1
+   - 耐久度为0时蓝莓丛自动回收
+   - 使用收割计数器记录收割次数
+
+4. **实现特点**
+   - 参考石堆挖掘机制设计
+   - 产出物品随机位置生成
+   - 详细的日志记录系统
+
 ## Strange Stone 调用链路
 
 奇怪石堆(Strange Stone Pile)是游戏中的特殊卡牌，具有事件触发功能。以下是其完整的调用链路：
@@ -230,6 +253,107 @@ AreaUtil.set_fog_visible(1, 0, false)
 
 - Godot 4.4.1
 - GDScript
+
+## 开发指南
+
+### 添加新的卡牌预制体 (Prefab)
+
+1. **创建卡包脚本文件**
+   ```bash
+   # 在 scripts/cards/prefabs/ 目录下创建新文件
+   touch scripts/cards/prefabs/new_card_pack.gd
+   ```
+
+2. **实现卡包基本结构**
+   ```gdscript
+   extends CardPackBase
+   
+   func _init():
+       pack_name = "新卡包名称"
+       description = "卡包描述"
+       card_name = "卡牌名称"
+       card_description = "卡牌描述"
+       card_type = "new_card_type"  # 唯一标识符
+       pack_image = "res://assets/images/new_card.png"
+       on_click = new_card_click_effect
+   
+   func new_card_click_effect(card_instance):
+       # 实现点击效果
+       GlobalUtil.log("新卡牌被点击", GlobalUtil.LogLevel.INFO)
+   ```
+
+3. **添加生命周期方法（可选）**
+   ```gdscript
+   func _init():
+       # ... 基本初始化 ...
+       after_init = custom_after_init
+       after_recipe_done = custom_after_recipe_done
+   
+   func custom_after_init(card_instance):
+       # 卡牌创建后的初始化逻辑
+       pass
+   
+   func custom_after_recipe_done(card_instance, crafting_cards: Array):
+       # 参与合成后的处理逻辑
+       pass
+   ```
+
+4. **添加到合成配方（如需要）**
+   ```gdscript
+   # 在 scripts/utils/recipe_constant.gd 中添加配方
+   {
+       "ingredients": ["ingredient1", "ingredient2"],
+       "products": ["new_card_type"],
+       "craft_time": 2.0
+   }
+   ```
+
+### 添加新的事件 (Event)
+
+1. **在事件工具类中添加事件处理**
+   ```gdscript
+   # 在 scripts/utils/event_util.gd 的 trigger_event 方法中添加
+   func trigger_event(event_id: int):
+       match event_id:
+           # ... 现有事件 ...
+           99:  # 新事件ID
+               handle_new_event()
+   
+   func handle_new_event():
+       GlobalUtil.log("触发新事件", GlobalUtil.LogLevel.INFO)
+       # 实现事件逻辑
+   ```
+
+2. **为卡牌添加事件标签**
+   ```gdscript
+   # 在卡牌生成时添加事件标签
+   func generate_event_card():
+       var card = CardUtil.create_card_from_pool(root, "event_card_type", position)
+       if card:
+           card.card_pack.add_tag("event_99")  # 添加事件标签
+   ```
+
+3. **实现事件触发卡牌**
+   ```gdscript
+   # 创建触发事件的卡包
+   extends CardPackBase
+   
+   func _init():
+       # ... 基本初始化 ...
+       after_recipe_done = trigger_event_after_recipe
+   
+   func trigger_event_after_recipe(card_instance, crafting_cards: Array):
+       # 检查事件标签并触发
+       var tags = card_instance.card_pack.get_tags()
+       for tag in tags:
+           if tag.begins_with("event_"):
+               var event_id = int(tag.substr(6))
+               EventUtil.trigger_event(event_id)
+               break
+       
+       # 触发后回收卡牌
+       CardUtil.remove(card_instance)
+   ```
 
 ## 通用方法使用指南
 

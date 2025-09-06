@@ -12,6 +12,10 @@ var RECIPES: Array[String] = [
 	'{"ingredients": ["iron_shovel", "dirt_pile"], "products": ["primary_flower_pot"], "craft_time": 5.0}',
 	# 木材 + 燧石 = 铁斧
 	'{"ingredients": ["wood", "flint"], "products": ["iron_axe"], "craft_time": 3.0}',
+	# 2木材 + 燧石 = 铲子
+	'{"ingredients": ["wood", "wood", "flint"], "products": ["iron_shovel"], "craft_time": 3.5}',
+	# 木材 + 3燧石 = 镰刀
+	'{"ingredients": ["wood", "flint", "flint", "flint"], "products": ["sickle"], "craft_time": 4.5}',
 	# 木材 + 2燧石 = 十字镐
 	'{"ingredients": ["wood", "flint", "flint"], "products": ["pickaxe"], "craft_time": 4.0}',
 	# 碎木堆 + 铁斧 = 木材
@@ -19,7 +23,11 @@ var RECIPES: Array[String] = [
 	# 石堆 + 十字镐 = 由回调函数处理生成
 	'{"ingredients": ["stone_pile", "pickaxe"], "products": [], "craft_time": 2.0}',
 	# 十字镐 + 奇怪石堆 = 未激活奥秘
-	'{"ingredients": ["pickaxe", "strange_stone_pile"], "products": ["inactive_mystery"], "craft_time": 13.0}'
+	'{"ingredients": ["pickaxe", "strange_stone_pile"], "products": ["inactive_mystery"], "craft_time": 13.0}',
+	# 镰刀 + 小蓝莓丛 = 由回调函数处理生成
+	'{"ingredients": ["sickle", "small_blueberry_bush"], "products": [], "craft_time": 2.0}',
+	# 镰刀 + 大蓝莓丛 = 由回调函数处理生成
+	'{"ingredients": ["sickle", "large_blueberry_bush"], "products": [], "craft_time": 3.0}'
 ]
 
 # 获取所有配方数据
@@ -49,6 +57,10 @@ func add_recipe(ingredients: Array[String], products: Array[String], craft_time:
 var recipe_remaining_times: Dictionary = {
 	# 铁斧配方只能使用一次
 	"[\"wood\",\"flint\"]" : 1,
+	# 铲子配方只能使用一次
+	"[\"wood\",\"wood\",\"flint\"]" : 1,
+	# 镰刀配方只能使用一次
+	"[\"wood\",\"flint\",\"flint\",\"flint\"]" : 1,
 	# 十字镐配方只能使用一次
 	"[\"wood\",\"flint\",\"flint\"]" : 1,
 	# 十字镐 + 奇怪石堆配方只能使用一次

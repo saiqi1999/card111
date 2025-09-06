@@ -4,7 +4,7 @@ extends Node
 
 # 卡牌池相关常量
 const CARD_POOL_SIZE: int = 33  # 卡牌池大小
-const CARD_POOL_HIDDEN_POSITION: Vector2 = Vector2(-1000, -1000)  # 卡牌池隐藏位置
+const CARD_POOL_HIDDEN_POSITION: Vector2 = Vector2(-5000, -5000)  # 卡牌池隐藏位置
 
 # 日志系统相关常量
 const DEFAULT_LOG_ENABLED: bool = true  # 默认日志开启状态
@@ -85,8 +85,8 @@ const CAMERA_DRAG_SPEED: float = 1.0  # 相机拖拽速度
 # 区域管理相关常量
 const CAMERA_MOVE_BOUNDS_MIN: Vector2 = Vector2(1700, 1000)  # 相机移动范围最小值
 const CAMERA_MOVE_BOUNDS_SIZE: Vector2 = Vector2(400, 400)  # 相机移动范围尺寸
-const CARD_MOVE_BOUNDS_MIN: Vector2 = Vector2(1000, 700)  # 卡牌移动范围最小值
-const CARD_MOVE_BOUNDS_SIZE: Vector2 = Vector2(1400, 1000)  # 卡牌移动范围尺寸
+const CARD_MOVE_BOUNDS_MIN: Vector2 = Vector2(1000, 0)  # 卡牌移动范围最小值
+const CARD_MOVE_BOUNDS_SIZE: Vector2 = Vector2(2000, 1500)  # 卡牌移动范围尺寸（扩大一倍）
 const FOG_GRID_MIN: Vector2 = Vector2(CARD_MOVE_BOUNDS_MIN.x - CARD_WIDTH / 2, CARD_MOVE_BOUNDS_MIN.y - CARD_HEIGHT / 2)  # 迷雾网格起始位置（卡牌移动范围最小值 + 半个卡牌宽度和高度）
 const FOG_GRID_SIZE: Vector2 = Vector2(CARD_MOVE_BOUNDS_SIZE.x + CARD_WIDTH, CARD_MOVE_BOUNDS_SIZE.y + CARD_HEIGHT)  # 迷雾网格尺寸（卡牌移动范围尺寸 + 一个卡牌宽度和高度）
 const FOG_LAYER_COLOR: Color = Color(0, 0, 0, 1)  # 迷雾遮罩层颜色（黑色）

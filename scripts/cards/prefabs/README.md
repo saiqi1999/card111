@@ -73,6 +73,32 @@ func basic_skill_pack_click_effect(card_instance):
    - `after_init`：卡牌创建后的初始化逻辑
    - `after_recipe_done`：参与合成后的处理逻辑
 
+### 收割系统卡牌（蓝莓丛）
+```gdscript
+# 在初始化函数中设置 after_recipe_done 回调和耐久度
+func _init():
+    # ... 其他初始化代码 ...
+    after_recipe_done = blueberry_bush_after_recipe_done
+    harvest_count = 0  # 收割计数器
+    durability = 3     # 小蓝莓丛3次耐久，大蓝莓丛5次耐久
+
+# 收割后的处理逻辑
+func blueberry_bush_after_recipe_done(card_instance, crafting_cards: Array):
+    harvest_count += 1
+    durability -= 1
+    
+    # 必定产出蓝莓
+    CardUtil.create_card_from_pool(root, "blueberry", target_position)
+    
+    # 第一次必出魔法气息，后续50%几率
+    if harvest_count == 1 or randf() < 0.5:
+        CardUtil.create_card_from_pool(root, "small_magic_aura", target_position)
+    
+    # 耐久度耗尽时回收卡牌
+    if durability <= 0:
+        CardUtil.remove(card_instance)
+```
+
 ## 注意事项
 
 1. **优先使用卡牌池**：创建和回收卡牌时应优先使用 `CardUtil` 提供的卡牌池方法
@@ -80,3 +106,5 @@ func basic_skill_pack_click_effect(card_instance):
 3. **清理资源**：确保在卡牌回收时正确清理所有资源和引用，特别是装饰器管理器和标签系统
 4. **使用 CardUtil**：移动卡牌时应使用 `CardUtil.move_card_to_position()` 方法
 5. **装饰器管理**：避免手动管理装饰器生命周期，让CardUtil的remove方法自动处理
+6. **耐久度机制**：对于有耐久度的卡牌，使用 `CardUtil.remove()` 而不是 `queue_free()` 进行回收
+7. **收割系统**：收割类卡牌应实现计数器和耐久度机制，确保资源产出的平衡性
