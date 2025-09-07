@@ -807,3 +807,85 @@ static func get_or_create_stack_for_card(card: Node2D) -> int:
 	
 	# 否则创建新堆叠
 	return create_new_stack_with_card(card)
+
+# 弹出卡牌到范围内方法
+# 参数: card - 卡牌实例, min_radius - 最小半径, max_radius - 最大半径
+# 效果: 检查最大半径范围内是否有同类型的堆叠，如果有就堆叠上去（选择最近的），如果没有就在最小和最大半径间随机移动
+static func pop_card_in_range(card: Node2D, min_radius: float, max_radius: float):
+	var CardUtil = preload("res://scripts/cards/card_util.gd")
+	var card_position = card.global_position
+	var card_type = card.card_type if card.has_method("get") and card.get("card_type") != null else card.card_name
+	
+	GlobalUtil.log("卡牌实例ID:" + str(card.get_instance_id()) + " 开始弹出卡牌到范围内，卡牌类型: " + str(card_type), GlobalUtil.LogLevel.DEBUG)
+	
+	# 在最大半径范围内查找同类型的堆叠
+	var target_card: Node2D = null
+	var closest_distance: float = max_radius
+	
+	for other_card in CardUtil.all_cards:
+		if other_card == null or not is_instance_valid(other_card):
+			continue
+		
+		# 排除自身
+		if other_card == card:
+			continue
+		
+		# 检查卡牌类型是否相同
+		var other_card_type = other_card.card_type if other_card.has_method("get") and other_card.get("card_type") != null else other_card.card_name
+		if other_card_type != card_type:
+			continue
+		
+		# 计算距离
+		var distance = card_position.distance_to(other_card.global_position)
+		if distance > max_radius:
+			continue
+		
+		# 检查目标卡牌所在堆叠是否正在合成中
+		var other_card_id = other_card.get_instance_id()
+		if is_in_stack_by_id(other_card_id):
+			var target_stack_id = get_stack_id_by_card_id(other_card_id)
+			if RecipeUtil.is_stack_crafting_by_id(target_stack_id):
+				GlobalUtil.log("目标卡牌堆叠ID " + str(target_stack_id) + " 正在合成中，跳过", GlobalUtil.LogLevel.DEBUG)
+				continue
+			
+			# 检查目标卡牌是否是堆叠的最后一张（顶部卡牌）
+			var stack_cards = get_stack_cards(target_stack_id)
+			if stack_cards.size() > 0 and stack_cards[-1] != other_card:
+				GlobalUtil.log("目标卡牌不是堆叠的最后一张，跳过", GlobalUtil.LogLevel.DEBUG)
+				continue
+		
+		# 如果距离更近，更新目标卡牌
+		if distance < closest_distance:
+			closest_distance = distance
+			target_card = other_card
+	
+	# 如果找到了同类型的堆叠，进行堆叠
+	if target_card != null:
+		GlobalUtil.log("找到同类型堆叠: " + target_card.card_name + "，距离: " + str(closest_distance) + "，开始堆叠", GlobalUtil.LogLevel.INFO)
+		
+		# 获取当前卡牌上方的所有卡牌（用于连带拖拽）
+		var cards_above = get_cards_above(card)
+		
+		# 堆叠到目标卡牌上
+		stack_card_group_on_target(card, target_card, cards_above)
+		
+		GlobalUtil.log("卡牌成功堆叠，堆叠偏移已自动处理", GlobalUtil.LogLevel.INFO)
+	else:
+		# 没有找到同类型的单一卡牌，随机移动到新位置
+		GlobalUtil.log("未找到同类型单一卡牌，开始随机移动", GlobalUtil.LogLevel.DEBUG)
+		
+		# 生成随机位置（参考森林道路的实现）
+		var target_position = CardUtil.get_valid_position(card_position, min_radius, max_radius)
+		
+		# 获取当前卡牌上方的所有卡牌（用于连带移动）
+		var cards_above = get_cards_above(card)
+		
+		# 移动卡牌到新位置
+		CardUtil.move_card(card, target_position)
+		for above_card in cards_above:
+			if above_card != null and is_instance_valid(above_card):
+				# 为上方卡牌生成稍微偏移的位置
+				var offset_position = CardUtil.get_valid_position(target_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+				CardUtil.move_card(above_card, offset_position)
+		
+		GlobalUtil.log("卡牌随机移动到位置: " + str(target_position) + "，连带移动卡牌数: " + str(cards_above.size()), GlobalUtil.LogLevel.INFO)

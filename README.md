@@ -369,6 +369,17 @@ if card:
     GlobalUtil.log("生成卡牌并移动到位置: " + str(target_position), GlobalUtil.LogLevel.INFO)
 ```
 
+#### 智能卡牌移动（推荐）
+```gdscript
+# 使用pop_card_in_range方法进行智能移动
+# 优先堆叠同类型卡牌，无则随机移动
+StackUtil.pop_card_in_range(
+    card_instance,
+    GlobalConstants.CARD_SPAWN_MIN_DISTANCE,  # 最小搜索距离
+    GlobalConstants.CARD_SPAWN_MAX_DISTANCE   # 最大搜索距离
+)
+```
+
 #### 位置生成与避让
 ```gdscript
 # 使用全局常量定义距离参数
@@ -408,7 +419,74 @@ static func is_position_overlapping(pos: Vector2, min_spacing: float) -> bool:
     return false
 ```
 
-### 4. 日志记录规范
+### 4. 智能卡牌移动系统 (pop_card_in_range)
+
+#### 方法概述
+`StackUtil.pop_card_in_range()` 是一个智能卡牌移动方法，能够：
+- 优先查找范围内的同类型卡牌进行堆叠
+- 无同类型卡牌时随机移动到有效位置
+- 自动处理连带卡牌移动和堆叠偏移
+- 自动触发合成检测
+
+#### 使用步骤
+
+**步骤1：基本调用**
+```gdscript
+# 使用默认搜索范围
+StackUtil.pop_card_in_range(
+    card_instance,
+    GlobalConstants.CARD_SPAWN_MIN_DISTANCE,
+    GlobalConstants.CARD_SPAWN_MAX_DISTANCE
+)
+```
+
+**步骤2：在合成产物生成中使用**
+```gdscript
+# 在recipe_util.gd的_create_result_cards方法中
+for product_type in recipe.products:
+    var product_card = CardUtil.create_card_from_pool(root, product_type, original_position)
+    if product_card:
+        # 使用智能移动替代随机移动
+        StackUtil.pop_card_in_range(
+            product_card,
+            GlobalConstants.CARD_SPAWN_MIN_DISTANCE,
+            GlobalConstants.CARD_SPAWN_MAX_DISTANCE
+        )
+```
+
+**步骤3：自定义搜索范围**
+```gdscript
+# 近距离搜索（适用于精确堆叠）
+StackUtil.pop_card_in_range(
+    card_instance,
+    GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE,
+    GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE
+)
+
+# 远距离搜索（适用于大范围查找）
+StackUtil.pop_card_in_range(
+    card_instance,
+    GlobalConstants.CARD_SPAWN_MIN_DISTANCE_FAR,
+    GlobalConstants.CARD_SPAWN_MAX_DISTANCE_FAR
+)
+```
+
+#### 工作原理
+1. **同类型堆叠检测**：在指定范围内查找相同类型的卡牌
+2. **距离计算**：计算与目标卡牌的距离，选择最近的有效目标
+3. **合成状态检查**：确保目标堆叠未处于合成状态
+4. **堆叠操作**：调用`stack_card_group_on_target`处理堆叠逻辑
+5. **随机移动**：无同类型卡牌时，生成随机有效位置
+6. **偏移处理**：自动应用`CARD_STACK_OFFSET`处理堆叠偏移
+
+#### 优势特性
+- **智能决策**：优先堆叠，次选随机移动
+- **自动偏移**：无需手动处理堆叠位置偏移
+- **合成集成**：自动触发合成检测和状态管理
+- **连带移动**：自动处理堆叠中的其他卡牌
+- **边界安全**：确保移动位置在有效范围内
+
+### 5. 日志记录规范
 
 #### 标准日志格式
 ```gdscript

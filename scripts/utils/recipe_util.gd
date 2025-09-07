@@ -274,9 +274,9 @@ func _create_result_cards(result_types: Array[String], position: Vector2):
 		if result_card != null:
 			GlobalUtil.log("成功创建合成产物: " + result_type, GlobalUtil.LogLevel.INFO)
 			
-			# 对合成产物进行随机移动
-			var move_distance = CardUtil.random_move_card(result_card)
-			GlobalUtil.log("合成产物随机移动距离: " + str(move_distance), GlobalUtil.LogLevel.INFO)
+			# 对合成产物进行智能移动（优先堆叠同类型卡牌）
+			StackUtil.pop_card_in_range(result_card, GlobalConstants.CARD_SPAWN_MIN_DISTANCE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE)
+			GlobalUtil.log("合成产物已智能移动（优先堆叠同类型）", GlobalUtil.LogLevel.INFO)
 		else:
 			GlobalUtil.log("创建合成产物失败: " + result_type, GlobalUtil.LogLevel.ERROR)
 
