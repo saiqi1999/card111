@@ -3,10 +3,11 @@
 extends Node
 
 # 配方数据数组，每个元素是一个JSON字符串
-# JSON格式包含三个字段：
+# JSON格式包含四个字段：
 # - ingredients: Array[String] - 原料列表
 # - products: Array[String] - 产出列表  
 # - craft_time: float - 合成时长（秒）
+# - exhausted: Array[String] - 合成结束后需要移除的物品类型列表
 var RECIPES: Array[String] = [
 	# 铲子 + 土堆 = 基础花盆
 	'{"ingredients": ["iron_shovel", "dirt_pile"], "products": ["primary_flower_pot"], "craft_time": 5.0}',
@@ -27,7 +28,15 @@ var RECIPES: Array[String] = [
 	# 镰刀 + 小蓝莓丛 = 由回调函数处理生成
 	'{"ingredients": ["sickle", "small_blueberry_bush"], "products": [], "craft_time": 2.0}',
 	# 镰刀 + 大蓝莓丛 = 由回调函数处理生成
-	'{"ingredients": ["sickle", "large_blueberry_bush"], "products": [], "craft_time": 3.0}'
+	'{"ingredients": ["sickle", "large_blueberry_bush"], "products": [], "craft_time": 3.0}',
+	# 3小魔法气息 = 大魔法气息
+	'{"ingredients": ["small_magic_aura", "small_magic_aura", "small_magic_aura"], "products": ["large_magic_aura"], "craft_time": 4.0, "exhausted": ["small_magic_aura"]}',
+	# 未激活奥秘 + 大魔法气息 + 基础花盆 = 地元素奥秘0级
+	'{"ingredients": ["inactive_mystery", "large_magic_aura", "primary_flower_pot"], "products": ["earth_mystery_level0"], "craft_time": 8.0, "exhausted": ["inactive_mystery", "large_magic_aura"]}',
+	# 未激活法阵 + 大魔法气息 + 刮风 = 气元素奥秘0级
+	'{"ingredients": ["inactive_mystery", "large_magic_aura", "wind"], "products": ["air_mystery_level0"], "craft_time": 6.0, "exhausted": ["inactive_mystery", "large_magic_aura"]}',
+	# 未激活法阵 + 大魔法气息 + 下雨 = 水元素奥秘0级
+	'{"ingredients": ["inactive_mystery", "large_magic_aura", "rain"], "products": ["water_mystery_level0"], "craft_time": 6.0, "exhausted": ["inactive_mystery", "large_magic_aura"]}'
 ]
 
 # 获取所有配方数据
@@ -43,11 +52,12 @@ func get_all_recipes() -> Array[Dictionary]:
 	return recipes
 
 # 添加新配方
-func add_recipe(ingredients: Array[String], products: Array[String], craft_time: float):
+func add_recipe(ingredients: Array[String], products: Array[String], craft_time: float, exhausted: Array[String] = []):
 	var recipe_dict = {
 		"ingredients": ingredients,
 		"products": products,
-		"craft_time": craft_time
+		"craft_time": craft_time,
+		"exhausted": exhausted
 	}
 	var json_string = JSON.stringify(recipe_dict)
 	RECIPES.append(json_string)
@@ -64,7 +74,13 @@ var recipe_remaining_times: Dictionary = {
 	# 十字镐配方只能使用一次
 	"[\"wood\",\"flint\",\"flint\"]" : 1,
 	# 十字镐 + 奇怪石堆配方只能使用一次
-	"[\"pickaxe\",\"strange_stone_pile\"]" : 1
+	"[\"pickaxe\",\"strange_stone_pile\"]" : 1,
+	# 未激活奥秘 + 大魔法气息 + 基础花盆配方只能使用一次
+	"[\"inactive_mystery\",\"large_magic_aura\",\"primary_flower_pot\"]" : 1,
+	# 未激活法阵 + 大魔法气息 + 刮风配方只能使用一次
+	"[\"inactive_mystery\",\"large_magic_aura\",\"wind\"]" : 1,
+	# 未激活法阵 + 大魔法气息 + 下雨配方只能使用一次
+	"[\"inactive_mystery\",\"large_magic_aura\",\"rain\"]" : 1
 }
 
 # 检查配方是否还有剩余次数

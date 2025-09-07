@@ -119,14 +119,20 @@ func is_top_card_at_position(mouse_pos: Vector2) -> bool:
 	var highest_layer = -1
 	
 	for card in cards_at_position:
-		if card.has_method("get") and card.get("card_layer") != null:
-			var layer = card.get("card_layer")
+		# 直接访问card_layer属性，而不是使用get方法
+		if card.has_method("get") and "card_layer" in card:
+			var layer = card.card_layer
+			GlobalUtil.log("卡牌实例ID:" + str(card.get_instance_id()) + " 层级:" + str(layer), GlobalUtil.LogLevel.DEBUG)
 			if layer > highest_layer:
 				highest_layer = layer
 				top_card = card
 	
+	# 记录最终结果
+	var is_top = (top_card == self)
+	GlobalUtil.log("卡牌实例ID:" + str(get_instance_id()) + " 是否为最上层:" + str(is_top) + " 最高层级:" + str(highest_layer) + " 当前层级:" + str(card_layer), GlobalUtil.LogLevel.DEBUG)
+	
 	# 返回当前卡牌是否是最上层的
-	return top_card == self
+	return is_top
 
 # 清理无效的卡牌引用
 static func cleanup_invalid_cards():
@@ -636,6 +642,9 @@ static func get_card_from_pool(root_node: Node) -> Node2D:
 	# 如果池中有可用卡牌，直接返回
 	if card_pool.size() > 0:
 		var card = card_pool.pop_front()
+		# 注册卡牌到层级管理系统
+		if card.has_method("register_card"):
+			card.register_card()
 		GlobalUtil.log("从卡牌池获取卡牌，剩余: " + str(card_pool.size()), GlobalUtil.LogLevel.DEBUG)
 		return card
 	
@@ -645,6 +654,9 @@ static func get_card_from_pool(root_node: Node) -> Node2D:
 	var card_instance = card_scene.instantiate()
 	card_instance.position = hidden_position
 	root_node.add_child(card_instance)
+	# 注册新创建的卡牌到层级管理系统
+	if card_instance.has_method("register_card"):
+		card_instance.register_card()
 	return card_instance
 
 # 将卡牌返回到池中

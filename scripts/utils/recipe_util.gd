@@ -16,11 +16,13 @@ class Recipe:
 	var ingredients: Array[String] = []  # 参与合成的卡牌类型
 	var craft_time: float = 0.0  # 合成时间（秒）
 	var result_types: Array[String] = []  # 合成产物类型列表
+	var exhausted: Array[String] = []  # 合成结束后需要移除的物品类型列表
 	
-	func _init(p_ingredients: Array[String], p_craft_time: float, p_result_types: Array[String]):
+	func _init(p_ingredients: Array[String], p_craft_time: float, p_result_types: Array[String], p_exhausted: Array[String] = []):
 		ingredients = p_ingredients
 		craft_time = p_craft_time
 		result_types = p_result_types
+		exhausted = p_exhausted
 
 # 正在进行的合成任务
 class CraftingTask:
@@ -98,21 +100,26 @@ func load_recipes_from_constant():
 			var ingredients_typed: Array[String] = []
 			for ingredient in recipe_data.ingredients:
 				ingredients_typed.append(str(ingredient))
-			var recipe = Recipe.new(ingredients_typed, recipe_data.craft_time, result_types)
+			# 处理exhausted字段
+			var exhausted_typed: Array[String] = []
+			if recipe_data.has("exhausted"):
+				for exhausted_item in recipe_data.exhausted:
+					exhausted_typed.append(str(exhausted_item))
+			var recipe = Recipe.new(ingredients_typed, recipe_data.craft_time, result_types, exhausted_typed)
 			recipes.append(recipe)
-			GlobalUtil.log("从RecipeConstant加载配方: " + str(recipe_data.ingredients) + " -> " + str(result_types) + " (" + str(recipe_data.craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
+			GlobalUtil.log("从RecipeConstant加载配方: " + str(recipe_data.ingredients) + " -> " + str(result_types) + " (" + str(recipe_data.craft_time) + "秒), 移除: " + str(exhausted_typed), GlobalUtil.LogLevel.INFO)
 		else:
 			GlobalUtil.log("配方数据格式错误，跳过: " + str(recipe_data), GlobalUtil.LogLevel.ERROR)
 
 # 注册新配方
-func register_recipe(ingredients: Array[String], craft_time: float, result_types: Array[String]):
-	var recipe = Recipe.new(ingredients, craft_time, result_types)
+func register_recipe(ingredients: Array[String], craft_time: float, result_types: Array[String], exhausted: Array[String] = []):
+	var recipe = Recipe.new(ingredients, craft_time, result_types, exhausted)
 	recipes.append(recipe)
 	
 	# 同时添加到RecipeConstant中
-	RecipeConstant.add_recipe(ingredients, result_types, craft_time)
+	RecipeConstant.add_recipe(ingredients, result_types, craft_time, exhausted)
 	
-	GlobalUtil.log("注册配方: " + str(ingredients) + " -> " + str(result_types) + " (" + str(craft_time) + "秒)", GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("注册配方: " + str(ingredients) + " -> " + str(result_types) + " (" + str(craft_time) + "秒), 移除: " + str(exhausted), GlobalUtil.LogLevel.INFO)
 
 # 检查堆叠是否匹配某个配方
 func check_stack_for_recipe(stack_cards: Array) -> Recipe:
@@ -250,6 +257,11 @@ func _complete_crafting(task: CraftingTask):
 		# 调用after_recipe_done回调
 		GlobalUtil.log("调用卡牌包 " + card_pack.pack_name + " 的 after_recipe_done 回调", GlobalUtil.LogLevel.INFO)
 		card_pack.after_recipe_done.call(card, cards_copy)
+	
+	# 处理exhausted字段，移除指定类型的卡牌
+	if task.recipe.exhausted.size() > 0:
+		GlobalUtil.log("开始移除exhausted卡牌类型: " + str(task.recipe.exhausted), GlobalUtil.LogLevel.INFO)
+		_remove_exhausted_cards(cards_copy, task.recipe.exhausted)
 	
 	# 合成完成后，重新检查堆叠是否仍能继续合成
 	_check_stack_for_continued_crafting(task.stack_id)
@@ -430,6 +442,24 @@ func is_stack_crafting(stack_id: String) -> bool:
 		if task.stack_id == stack_id:
 			return true
 	return false
+
+# 移除exhausted字段指定的卡牌类型
+func _remove_exhausted_cards(cards: Array, exhausted_types: Array[String]):
+	var CardUtil = preload("res://scripts/cards/card_util.gd")
+	
+	for card in cards:
+		if card == null or not is_instance_valid(card):
+			continue
+		
+		# 获取卡牌类型（使用card_type字段）
+		var card_type = ""
+		if card.has_method("get"):
+			card_type = card.get("card_type")
+		
+		# 检查是否需要移除此类型的卡牌
+		if card_type in exhausted_types:
+			GlobalUtil.log("移除exhausted卡牌: " + card_type + " ID:" + str(card.get_instance_id()), GlobalUtil.LogLevel.INFO)
+			CardUtil.remove(card)
 
 # 检查堆叠是否正在合成中（整数版本）
 func is_stack_crafting_by_id(stack_id: int) -> bool:

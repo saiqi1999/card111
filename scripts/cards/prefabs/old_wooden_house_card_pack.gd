@@ -42,36 +42,32 @@ func old_wooden_house_click_effect(card_instance):
 	if click_count == 1:
 		# 第一次点击：显示翻找前提示，生成木板
 		GlobalUtil.log("这里只有一些垃圾", GlobalUtil.LogLevel.INFO)
-		# 位置生成现在直接基于all_cards，无需手动清空
-		var target_position = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 		var wood = CardUtil.create_card_from_pool(card_instance.get_tree().root, "wood", card_position)
 		if wood:
-			CardUtil.move_card(wood, target_position)
-			GlobalUtil.log("旧木屋：生成木板卡牌，位置: " + str(target_position), GlobalUtil.LogLevel.INFO)
+			StackUtil.pop_card_in_range(wood, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+			GlobalUtil.log("旧木屋：生成木板卡牌，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 	
 	elif click_count == 2:
 		# 第二次点击：生成第二块木板
-		var target_position = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 		var wood = CardUtil.create_card_from_pool(card_instance.get_tree().root, "wood", card_position)
 		if wood:
-			CardUtil.move_card(wood, target_position)
-			GlobalUtil.log("旧木屋：生成第二块木板卡牌，位置: " + str(target_position), GlobalUtil.LogLevel.INFO)
+			StackUtil.pop_card_in_range(wood, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+			GlobalUtil.log("旧木屋：生成第二块木板卡牌，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 	
 	elif click_count == 3:
 		# 第三次点击：生成燧石
-		var target_position = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 		var flint = CardUtil.create_card_from_pool(card_instance.get_tree().root, "flint", card_position)
 		if flint:
-			CardUtil.move_card(flint, target_position)
-			GlobalUtil.log("旧木屋：生成燧石卡牌，位置: " + str(target_position), GlobalUtil.LogLevel.INFO)
+			StackUtil.pop_card_in_range(flint, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+			GlobalUtil.log("旧木屋：生成燧石卡牌，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 	
 	elif click_count == 4:
 		# 第四次点击：生成第二块燧石，显示翻找后提示
-		var target_position = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 		var flint = CardUtil.create_card_from_pool(card_instance.get_tree().root, "flint", card_position)
 		if flint:
-			CardUtil.move_card(flint, target_position)
-			GlobalUtil.log("旧木屋：生成第二块燧石卡牌，位置: " + str(target_position), GlobalUtil.LogLevel.INFO)
+			# 使用pop_card_in_range进行生成后处理
+			StackUtil.pop_card_in_range(flint, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+			GlobalUtil.log("旧木屋：生成第二块燧石卡牌，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 		GlobalUtil.log("这里什么都没有了", GlobalUtil.LogLevel.INFO)
 	
 	else:

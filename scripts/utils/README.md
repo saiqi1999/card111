@@ -69,23 +69,32 @@
    - 从 `RecipeConstant` 加载配方数据
    - 支持动态注册新配方
    - 检查堆叠是否匹配配方
+   - 支持exhausted字段，用于合成后移除指定类型卡牌
 
 2. **合成任务管理**
    - 创建和管理合成任务
    - 支持合成任务的暂停、恢复和转移
    - 处理合成完成后的产物生成
+   - 处理exhausted卡牌的自动移除
 
 3. **进度条系统**
    - 为每个合成堆叠显示进度条
    - 实时更新合成进度
    - 支持进度条的显示、隐藏和位置更新
 
-4. **核心方法**
+4. **Exhausted机制**
+   - 合成完成后检查配方的exhausted字段
+   - 自动移除指定类型的卡牌
+   - 使用CardUtil.remove_card方法进行卡牌移除
+   - 通过card_type字段获取卡牌类型
+
+5. **核心方法**
    - `start_crafting`: 开始合成任务
    - `restore_crafting_task`: 恢复合成任务到新堆叠
    - `show_progress_bar_for_stack`: 显示堆叠进度条
    - `hide_progress_bar_for_stack`: 隐藏堆叠进度条
    - `cancel_crafting`: 取消合成任务
+   - `_remove_exhausted_cards`: 移除exhausted指定的卡牌类型
 
 ### stack_util.gd
 

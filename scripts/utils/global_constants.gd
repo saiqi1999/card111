@@ -83,6 +83,7 @@ const CAMERA_ZOOM_MIN: float = 0.5  # 相机最小缩放
 const CAMERA_ZOOM_MAX: float = 3.0  # 相机最大缩放
 const CAMERA_ZOOM_SPEED: float = 0.1  # 相机缩放速度
 const CAMERA_DRAG_SPEED: float = 1.0  # 相机拖拽速度
+const CAMERA_KEYBOARD_SPEED: float = 500.0  # 相机键盘移动速度（像素/秒）
 
 # 区域管理相关常量
 const CAMERA_MOVE_BOUNDS_MIN: Vector2 = Vector2(1700, 1000)  # 相机移动范围最小值
@@ -148,6 +149,7 @@ static func get_all_constants() -> Dictionary:
 		"CAMERA_ZOOM_MAX": CAMERA_ZOOM_MAX,
 		"CAMERA_ZOOM_SPEED": CAMERA_ZOOM_SPEED,
 		"CAMERA_DRAG_SPEED": CAMERA_DRAG_SPEED,
+		"CAMERA_KEYBOARD_SPEED": CAMERA_KEYBOARD_SPEED,
 		"CAMERA_MOVE_BOUNDS_MIN": CAMERA_MOVE_BOUNDS_MIN,
 		"CAMERA_MOVE_BOUNDS_SIZE": CAMERA_MOVE_BOUNDS_SIZE,
 		"CARD_MOVE_BOUNDS_MIN": CARD_MOVE_BOUNDS_MIN,

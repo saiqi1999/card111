@@ -38,14 +38,14 @@ func generate_fifth_click_extras(card_instance):
 	
 	# 位置生成现在直接基于all_cards，无需手动清空位置记录
 	
-	# 生成木堆和石堆，瞬移到目前area区域内的随机地点
+	# 生成木堆和石堆，使用pop_card_in_range进行生成后处理
 	var extra_resources = ["wood_scraps", "stone_pile"]
 	for type in extra_resources:
-		var card_pos = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_FAR, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_FAR) # 设置较远的距离范围
 		var resource = CardUtil.create_card_from_pool(card_instance.get_tree().root, type, card_position)
 		if resource:
-			CardUtil.goto_card(resource, card_pos)
-			GlobalUtil.log("森林道路：第五次点击生成了一张" + type + "卡牌，使用goto_card移动到位置: " + str(card_pos), GlobalUtil.LogLevel.INFO)
+			# 使用pop_card_in_range进行生成后处理，设置较远的距离范围
+			StackUtil.pop_card_in_range(resource, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_FAR, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_FAR)
+			GlobalUtil.log("森林道路：第五次点击生成了一张" + type + "卡牌，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 		else:
 			GlobalUtil.log("森林道路：" + type + "卡牌生成失败", GlobalUtil.LogLevel.WARNING)
 	
@@ -84,47 +84,47 @@ func forest_road_click_effect(card_instance):
 	match click_count:
 		1:
 			# 第一次点击生成木屋，在较近的位置
-			var house_pos = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 			var house = CardUtil.create_card_from_pool(card_instance.get_tree().root, "old_wooden_house", card_position)
 			if house:
-				CardUtil.move_card(house, house_pos)
-				GlobalUtil.log("森林道路：第一次点击生成了一座木屋，位置: " + str(house_pos), GlobalUtil.LogLevel.INFO)
+				# 使用pop_card_in_range进行生成后处理
+				StackUtil.pop_card_in_range(house, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+				GlobalUtil.log("森林道路：第一次点击生成了一座木屋，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 			else:
 				GlobalUtil.log("森林道路：木屋生成失败", GlobalUtil.LogLevel.WARNING)
 		2:
 			# 第二次点击生成燧石，在较近的位置
-			var flint_pos = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 			var flint = CardUtil.create_card_from_pool(card_instance.get_tree().root, "flint", card_position)
 			if flint:
-				CardUtil.move_card(flint, flint_pos)
-				GlobalUtil.log("森林道路：第二次点击生成了燧石，位置: " + str(flint_pos), GlobalUtil.LogLevel.INFO)
+				# 使用pop_card_in_range进行生成后处理
+				StackUtil.pop_card_in_range(flint, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+				GlobalUtil.log("森林道路：第二次点击生成了燧石，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 			else:
 				GlobalUtil.log("森林道路：燧石生成失败", GlobalUtil.LogLevel.WARNING)
 		3:
 			# 第三次点击生成燧石，在较近的位置
-			var flint_pos2 = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 			var flint2 = CardUtil.create_card_from_pool(card_instance.get_tree().root, "flint", card_position)
 			if flint2:
-				CardUtil.move_card(flint2, flint_pos2)
-				GlobalUtil.log("森林道路：第三次点击生成了燧石，位置: " + str(flint_pos2), GlobalUtil.LogLevel.INFO)
+				# 使用pop_card_in_range进行生成后处理
+				StackUtil.pop_card_in_range(flint2, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+				GlobalUtil.log("森林道路：第三次点击生成了燧石，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 			else:
 				GlobalUtil.log("森林道路：燧石生成失败", GlobalUtil.LogLevel.WARNING)
 		4:
 			# 第四次点击生成木板，在较近的位置
-			var wood_pos = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 			var wood = CardUtil.create_card_from_pool(card_instance.get_tree().root, "wood", card_position)
 			if wood:
-				CardUtil.move_card(wood, wood_pos)
-				GlobalUtil.log("森林道路：第四次点击生成了木板，位置: " + str(wood_pos), GlobalUtil.LogLevel.INFO)
+				# 使用pop_card_in_range进行生成后处理
+				StackUtil.pop_card_in_range(wood, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+				GlobalUtil.log("森林道路：第四次点击生成了木板，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 			else:
 				GlobalUtil.log("森林道路：木板生成失败", GlobalUtil.LogLevel.WARNING)
 		5:
 			# 第五次点击生成向导之书，在较近的位置
-			var book_pos = CardUtil.get_valid_position(card_position, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 			var book = CardUtil.create_card_from_pool(card_instance.get_tree().root, "guide_book", card_position)
 			if book:
-				CardUtil.move_card(book, book_pos)
-				GlobalUtil.log("森林道路：第五次点击生成了向导之书，位置: " + str(book_pos), GlobalUtil.LogLevel.INFO)
+				# 使用pop_card_in_range进行生成后处理
+				StackUtil.pop_card_in_range(book, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+				GlobalUtil.log("森林道路：第五次点击生成了向导之书，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 			else:
 				GlobalUtil.log("森林道路：向导之书生成失败", GlobalUtil.LogLevel.WARNING)
 			

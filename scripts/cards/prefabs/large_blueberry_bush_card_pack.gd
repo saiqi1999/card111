@@ -49,16 +49,18 @@ func large_blueberry_bush_after_recipe_done(card_instance, crafting_cards: Array
 	# 每次收割必定产出1个蓝莓
 	var blueberry = CardUtil.create_card_from_pool(root_node, "blueberry", card_instance.global_position)
 	if blueberry:
-		var move_distance = CardUtil.random_move_card(blueberry)
-		GlobalUtil.log("大蓝莓丛收割：生成蓝莓，随机移动距离: " + str(move_distance), GlobalUtil.LogLevel.INFO)
+		# 使用pop_card_in_range进行生成后处理
+		StackUtil.pop_card_in_range(blueberry, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+		GlobalUtil.log("大蓝莓丛收割：生成蓝莓，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 	
 	# 第一次收割必定产出小魔法气息，之后50%几率产出
 	var should_generate_magic = (harvest_count == 1) or (randf() < 0.5)
 	if should_generate_magic:
 		var magic_aura = CardUtil.create_card_from_pool(root_node, "small_magic_aura", card_instance.global_position)
 		if magic_aura:
-			var move_distance = CardUtil.random_move_card(magic_aura)
-			GlobalUtil.log("大蓝莓丛收割：生成小魔法气息，随机移动距离: " + str(move_distance), GlobalUtil.LogLevel.INFO)
+			# 使用pop_card_in_range进行生成后处理
+			StackUtil.pop_card_in_range(magic_aura, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+			GlobalUtil.log("大蓝莓丛收割：生成小魔法气息，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 	
 	GlobalUtil.log("大蓝莓丛收割完成，收割次数: " + str(harvest_count) + "，剩余耐久度: " + str(durability), GlobalUtil.LogLevel.INFO)
 	

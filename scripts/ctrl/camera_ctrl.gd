@@ -16,6 +16,12 @@ var camera_start_position: Vector2 = Vector2.ZERO
 # 缩放相关变量
 var current_zoom: Vector2 = Vector2.ONE
 
+# 键盘移动相关变量
+var keyboard_movement: Vector2 = Vector2.ZERO
+var is_moving: bool = false
+
+
+
 func _ready():
 	# 设置相机为当前活动相机
 	enabled = true
@@ -28,6 +34,22 @@ func _ready():
 	position = GlobalConstants.SCREEN_CENTER
 	
 	GlobalUtil.log("相机控制器初始化完成，位置: " + str(position) + ", 缩放: " + str(zoom), GlobalUtil.LogLevel.DEBUG)
+
+
+
+# 处理每帧的键盘移动
+func _process(delta):
+	update_keyboard_movement()
+	if is_moving and keyboard_movement != Vector2.ZERO:
+		# 根据当前缩放调整移动速度
+		var move_speed = GlobalConstants.CAMERA_KEYBOARD_SPEED / current_zoom.x
+		var movement = keyboard_movement * move_speed * delta
+		
+		# 计算新位置并限制在允许范围内
+		var new_position = position + movement
+		position = AreaUtil.clamp_camera_position(new_position)
+		
+		GlobalUtil.log("相机键盘移动: " + str(movement) + ", 新位置: " + str(position), GlobalUtil.LogLevel.DEBUG)
 
 func _input(event):
 	# 处理鼠标左键拖拽
@@ -51,6 +73,21 @@ func _input(event):
 	# 处理鼠标移动（拖拽时）
 	elif event is InputEventMouseMotion and is_dragging:
 		update_camera_position(event.position)
+	
+	# 处理键盘按键事件
+	elif event is InputEventKey:
+		# 检测WASD和方向键的按下和松开
+		if event.keycode in [KEY_A, KEY_D, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+			update_keyboard_movement()
+			if event.pressed:
+				is_moving = true
+				GlobalUtil.log("开始键盘移动相机", GlobalUtil.LogLevel.DEBUG)
+			else:
+				# 检查是否还有其他移动键被按下
+				update_keyboard_movement()
+				if keyboard_movement == Vector2.ZERO:
+					is_moving = false
+					GlobalUtil.log("停止键盘移动相机", GlobalUtil.LogLevel.DEBUG)
 
 # 开始拖拽
 func start_dragging(mouse_pos: Vector2):
@@ -147,11 +184,31 @@ func set_camera_zoom(new_zoom: float):
 func get_camera_zoom() -> float:
 	return current_zoom.x
 
-# 获取相机信息（用于调试）
+
+
+# 更新键盘移动状态
+func update_keyboard_movement():
+	keyboard_movement = Vector2.ZERO
+	
+	# 检测WASD键位
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		keyboard_movement.x -= 1
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		keyboard_movement.x += 1
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		keyboard_movement.y -= 1
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		keyboard_movement.y += 1
+	
+	# 标准化对角线移动
+	if keyboard_movement.length() > 1:
+		keyboard_movement = keyboard_movement.normalized()
+
 func get_camera_info() -> Dictionary:
 	return {
 		"position": position,
 		"zoom": current_zoom,
 		"is_dragging": is_dragging,
-		"is_current": enabled
+		"is_moving": is_moving,
+		"keyboard_movement": keyboard_movement
 	}

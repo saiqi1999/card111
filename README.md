@@ -110,12 +110,14 @@ card.remove_fixed_decorator()
    - 支持多种配方定义（原料 → 产物）
    - 配方数据存储在 `RecipeConstant` 中
    - 支持动态添加新配方
+   - 配方JSON格式包含四个字段：ingredients、products、craft_time、exhausted
 
 2. **合成流程**
    - 将符合配方的卡牌堆叠在一起
    - 系统自动检测配方匹配
    - 显示合成进度条
    - 合成完成后生成产物卡牌
+   - 处理exhausted字段，移除指定类型的卡牌
 
 3. **进度管理**
    - 实时显示合成进度
@@ -126,6 +128,14 @@ card.remove_fixed_decorator()
    - 部分卡牌有合成次数限制
    - 支持一对多的合成产物
    - 合成完成后触发卡牌特殊效果
+   - **Exhausted机制**：合成结束后自动移除指定类型的卡牌
+
+5. **奥秘合成系统**
+   - 3个小魔法气息合成1个大魔法气息
+   - 未激活奥秘+大魔法气息+基础花盆 → 地元素奥秘0级
+   - 未激活奥秘+大魔法气息+风 → 气元素奥秘0级
+   - 未激活奥秘+大魔法气息+雨 → 水元素奥秘0级
+   - 所有涉及魔法气息和未激活奥秘的配方在合成后会移除相应的原料卡牌
 
 ### 5. 卡牌交互
 
@@ -500,6 +510,50 @@ GlobalUtil.log("操作描述，位置: " + str(position), GlobalUtil.LogLevel.IN
 GlobalUtil.log("操作失败原因", GlobalUtil.LogLevel.WARNING)
 ```
 
+## 代码问题记录与修正
+
+### 1. 卡牌类型获取问题
+
+**问题描述**：在exhausted卡牌移除功能中，最初使用了复杂的方式通过`card_pack.pack_name`获取卡牌类型。
+
+**用户纠正**：应该直接使用`card_util.gd`中的`card_type`字段获取卡牌类型。
+
+**修正前代码**：
+```gdscript
+# 获取卡牌类型
+var card_type = ""
+if card.has_method("get"):
+    var card_pack = card.get("card_pack")
+    if card_pack != null:
+        card_type = card_pack.pack_name
+```
+
+**修正后代码**：
+```gdscript
+# 获取卡牌类型（使用card_type字段）
+var card_type = ""
+if card.has_method("get"):
+    card_type = card.get("card_type")
+```
+
+**修正意义**：
+- 简化了代码逻辑
+- 提高了获取卡牌类型的效率和准确性
+- 直接使用了card_util.gd中定义的标准字段
+- 避免了通过card_pack间接获取的复杂性
+
+### 2. 配方系统Exhausted功能实现
+
+**功能描述**：为配方系统添加了exhausted字段，用于在合成完成后自动移除指定类型的卡牌。
+
+**实现要点**：
+- 在recipe_constant.gd中为配方JSON格式添加"exhausted"字段
+- 在recipe_util.gd中扩展Recipe类支持exhausted字段
+- 在合成完成流程中添加exhausted卡牌移除逻辑
+- 使用CardUtil.remove_card方法进行卡牌移除
+
+**关键修正**：用户指出应该使用card_type字段而不是card_pack.pack_name来获取卡牌类型，确保了功能的正确性和代码的简洁性。
+
 ## 注意事项
 
 1. **卡牌生成**：始终先在原位置生成，再移动到目标位置
@@ -507,3 +561,4 @@ GlobalUtil.log("操作失败原因", GlobalUtil.LogLevel.WARNING)
 3. **位置避让**：依赖CardUtil.all_cards自动避让，无需手动管理
 4. **生命周期**：确保正确处理卡牌的创建、移动和回收
 5. **边界检查**：所有位置操作都会自动进行边界限制
+6. **卡牌类型获取**：直接使用card_type字段，避免通过card_pack间接获取

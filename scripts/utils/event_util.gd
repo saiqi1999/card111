@@ -65,13 +65,10 @@ func _on_timer_timeout():
 		if card_instance:
 			GlobalUtil.log("生成天气卡牌：" + weather_type, GlobalUtil.LogLevel.INFO)
 			
-			# 随机移动卡牌
+			# 使用pop_card_in_range进行生成后处理
 			await get_tree().create_timer(0.5).timeout
-			var move_x = randf_range(-100, 100)
-			var move_y = randf_range(-100, 100)
-			var target_position = random_position + Vector2(move_x, move_y)
-			CardUtil.move_card(card_instance, target_position)
-			GlobalUtil.log("天气卡牌移动到：" + str(target_position), GlobalUtil.LogLevel.INFO)
+			StackUtil.pop_card_in_range(card_instance, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+			GlobalUtil.log("天气卡牌使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 		else:
 			GlobalUtil.log("天气卡牌生成失败：" + weather_type, GlobalUtil.LogLevel.WARNING)
 

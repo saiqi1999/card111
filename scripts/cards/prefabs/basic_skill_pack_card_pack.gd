@@ -66,11 +66,11 @@ func basic_skill_pack_click_effect(card_instance):
 	# 更新新卡牌显示
 	new_card.update_display()
 	
-	# 使用随机移动功能移动新卡牌
-	var move_distance = CardUtil.random_move_card(new_card)
+	# 使用pop_card_in_range进行生成后处理
+	StackUtil.pop_card_in_range(new_card, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
 	
 	# 记录生成信息
-	GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " Basic Skill Pack生成了" + type_name + "卡牌，移动距离: " + str(move_distance) + "，已生成: " + str(generated_cards_count) + "/" + str(MAX_GENERATED_CARDS), GlobalUtil.LogLevel.INFO)
+	GlobalUtil.log("卡牌实例ID:" + str(card_instance.get_instance_id()) + " Basic Skill Pack生成了" + type_name + "卡牌，使用pop_card_in_range处理，已生成: " + str(generated_cards_count) + "/" + str(MAX_GENERATED_CARDS), GlobalUtil.LogLevel.INFO)
 	
 	# 如果生成了第五张卡牌，立即回收自身
 	if generated_cards_count >= MAX_GENERATED_CARDS:

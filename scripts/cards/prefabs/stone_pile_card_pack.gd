@@ -41,15 +41,23 @@ func stone_pile_after_recipe_done(card_instance, crafting_cards: Array):
 	recipe_count += 1
 	GlobalUtil.log("石堆卡包参与合成，当前计数: " + str(recipe_count), GlobalUtil.LogLevel.INFO)
 	
-	# 随机生成资源，30%概率生成燧石，70%概率生成石头
+	# 生成资源逻辑：最后一次合成（第3次）必然生成燧石，前两次30%概率生成燧石
 	var root_node = card_instance.get_tree().current_scene
-	var random_value = randf()
-	var card_type = "flint" if random_value < 0.3 else "stone"
+	var card_type: String
+	if recipe_count >= 3:
+		# 最后一次合成必然生成燧石
+		card_type = "flint"
+		GlobalUtil.log("石堆最后一次合成，必然生成燧石", GlobalUtil.LogLevel.INFO)
+	else:
+		# 前两次合成按原有概率生成
+		var random_value = randf()
+		card_type = "flint" if random_value < 0.3 else "stone"
+	
 	var card = CardUtil.create_card_from_pool(root_node, card_type, card_instance.global_position)
 	if card:
-		# 对生成的卡牌进行随机移动
-		var move_distance = CardUtil.random_move_card(card)
-		GlobalUtil.log("石堆合成成功，生成" + ("燧石" if card_type == "flint" else "石头") + "，随机移动距离: " + str(move_distance), GlobalUtil.LogLevel.INFO)
+		# 使用pop_card_in_range进行生成后处理
+		StackUtil.pop_card_in_range(card, GlobalConstants.CARD_SPAWN_MIN_DISTANCE_CLOSE, GlobalConstants.CARD_SPAWN_MAX_DISTANCE_CLOSE)
+		GlobalUtil.log("石堆合成成功，生成" + ("燧石" if card_type == "flint" else "石头") + "，使用pop_card_in_range处理", GlobalUtil.LogLevel.INFO)
 	
 	# 3次合成后回收自己
 	if recipe_count >= 3:
